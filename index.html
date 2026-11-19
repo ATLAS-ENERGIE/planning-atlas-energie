@@ -317,6 +317,9 @@ let DEV=LS.get('atlas-dev');if(!DEV||DEV.length<16){DEV=rnd(16);LS.set('atlas-de
 const UA=navigator.userAgent||'';
 const IOS=/iPhone|iPad|iPod/.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const STANDALONE=!!((window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true);
+const PHONE=!!(window.matchMedia&&matchMedia('(pointer:coarse)').matches&&Math.min(screen.width,screen.height)<600);
+const LANGS=[['fr','Français'],['sq','Shqip (albanais)'],['pt','Português'],['tr','Türkçe'],['ar','العربية (arabe)'],['ro','Română'],['pl','Polski'],['es','Español'],['it','Italiano'],['en','English'],['de','Deutsch'],['hr','Hrvatski / Srpski / Bosanski'],['uk','Українська'],['ru','Русский']];
+let LANG=LS.get('atlas-lang')||'fr';if(!LANGS.some(l=>l[0]===LANG))LANG='fr';
 const MODELE=/iPhone/.test(UA)?'iPhone':/iPad/.test(UA)?'iPad':/Android/.test(UA)?(((/;\s*([^;)]+?)\s+Build\//.exec(UA))||[])[1]||'Android'):/Windows/.test(UA)?'PC Windows':/Mac/.test(UA)?'Mac':'Navigateur';
 function rpc(fn){const args=[].slice.call(arguments,1);
   const fail=e=>{const err=e instanceof Error?e:new Error(String(e&&e.message||e));if(/session/.test(String(err.message))&&ME)perdu();throw err;};
@@ -352,6 +355,13 @@ body{padding-bottom:64px}
 #atlas-setup .lien{background:none;border:none;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:13px;padding:0;justify-self:start}
 #atlas-notif .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 14px}
 #atlas-notif p{margin:0;padding:0 14px 12px;color:var(--muted);font-size:13.5px}
+#atlas-setup select{padding:10px 12px;font-size:16px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);width:100%}
+#atlas-setup .lang{display:flex;gap:8px;align-items:center;justify-content:flex-end;font-size:13px;color:var(--muted)}
+#atlas-setup .lang select{width:auto;padding:6px 8px;font-size:14px}
+#atlas-setup .sect{border-top:1px solid var(--line);padding-top:12px;display:grid;gap:8px}
+#atlas-setup .sect h3{margin:0;font:700 15px var(--f-display)}
+.atlas-lecture #addInter,.atlas-lecture [data-add-day],.atlas-lecture [data-new-eq],.atlas-lecture [data-new-ch],.atlas-lecture [data-new-tech],.atlas-lecture [data-new-acces],.atlas-lecture [data-edit-inter],.atlas-lecture [data-del-inter],.atlas-lecture #delEx,.atlas-lecture [data-export],.atlas-lecture [data-liberer],.atlas-lecture #an-cle,.atlas-lecture [data-new-rap]{display:none!important}
+[dir=rtl] #atlas-bar{left:auto;right:10px}
 #atlas-off{position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:95;background:var(--bad);color:#fff;padding:9px 14px;border-radius:8px;font-size:14px;max-width:calc(100% - 20px)}`;
 function ui(html){let d=document.getElementById('atlas-setup');if(!d){d=document.createElement('div');d.id='atlas-setup';document.body.appendChild(d);}d.innerHTML=`<div class="box2">${html}</div>`;return d;}
 function closeUi(){const d=document.getElementById('atlas-setup');if(d)d.remove();}
@@ -359,7 +369,7 @@ const MSG={mail:'Adresse mail invalide.',inconnu:"Cette adresse n'est pas enregi
 const msg=e=>{const m=clean(e);return MSG[m]||(/hors ligne|NetworkError|network/i.test(m)?'Pas de connexion internet.':m||'Erreur, réessaie.');};
 function ecranConnexion(){
   return new Promise(done=>{
-    const d=ui(`<div class="brand"><span class="mark" aria-hidden="true"></span><div><h2>Planning chantiers</h2><p>Atlas Énergie</p></div></div>
+    const d=ui(`${choixLangue()}<div class="brand"><span class="mark" aria-hidden="true"></span><div><h2>Planning chantiers</h2><p>Atlas Énergie</p></div></div>
       <div id="as-1"><p>Entre ton adresse mail. Tu vas recevoir un code à 6 chiffres.</p>
       <label class="fld" for="as-m">Adresse mail<div class="row"><input type="email" id="as-m" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" value="${esc(LS.get('atlas-mail'))}"><button class="btn primary" type="button" id="as-go">Recevoir mon code</button></div></label></div>
       <div id="as-2" hidden><p id="as-info"></p>
@@ -367,6 +377,7 @@ function ecranConnexion(){
       <div class="row"><button class="btn" type="button" id="as-back">Changer d'adresse</button><button class="btn" type="button" id="as-again">Renvoyer un code</button></div></div>
       <p class="err" id="as-e" role="alert"></p>`);
     const $=q=>d.querySelector(q),err=t=>{$('#as-e').textContent=t||'';};
+    brancherLangue(d);
     let mail='';
     const envoyer=async()=>{mail=$('#as-m').value.trim().toLowerCase();err('');
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)){err(MSG.mail);return;}
@@ -391,13 +402,13 @@ function toast(t){let d=document.getElementById('atlas-toast');if(!d){d=document
   d.textContent=t;clearTimeout(toast.t);toast.t=setTimeout(()=>{d.remove();},5000);}
 function ecranInstallIos(){
   return new Promise(done=>{
-    const d=ui(`<div class="brand"><span class="mark" aria-hidden="true"></span><div><h2>Planning chantiers</h2><p>Atlas Énergie</p></div></div>
+    const d=ui(`${choixLangue()}<div class="brand"><span class="mark" aria-hidden="true"></span><div><h2>Planning chantiers</h2><p>Atlas Énergie</p></div></div>
       <p><b>Installe d'abord l'appli sur ton iPhone</b>, c'est elle qui recevra les notifications du planning.</p>
       <ol><li>Touche le bouton <b>Partager</b> de Safari (le carré avec une flèche vers le haut).</li>
       <li>Choisis <b>« Sur l'écran d'accueil »</b>, puis <b>Ajouter</b>.</li>
       <li>Ferme Safari et ouvre l'appli <b>Planning Atlas</b> depuis l'écran d'accueil.</li></ol>
       <button class="lien" type="button" id="as-skip">Continuer dans Safari (bureau uniquement)</button>`);
-    d.querySelector('#as-skip').onclick=()=>done();
+    brancherLangue(d);d.querySelector('#as-skip').onclick=()=>done();
   });
 }
 /* ---------- Notifications et installation ---------- */
@@ -452,8 +463,91 @@ function fenetreCle(box){
 }
 new MutationObserver(()=>{const b=document.getElementById('atlas-notif');if(b&&!b.dataset.ok&&ME)boiteNotif(b);}).observe(document.documentElement,{childList:true,subtree:true});
 
+/* ---------- Traduction automatique de l'interface et des textes ---------- */
+const ORIG=new WeakMap(),POSE=new WeakMap(),TR={};let attente=new Map(),minuteur=null,NOMS=new Set();
+const cacheTr=l=>{if(!TR[l]){try{TR[l]=JSON.parse(localStorage.getItem('atlas-tr-'+l)||'{}');}catch(e){TR[l]={};}}return TR[l];};
+const garderTr=l=>{try{localStorage.setItem('atlas-tr-'+l,JSON.stringify(TR[l]));}catch(e){}};
+const IGN=new Set(['SCRIPT','STYLE','TEXTAREA','INPUT','NOSCRIPT','CODE']);
+function majNoms(){const n=new Set();['equipes','techniciens','chantiers','acces'].forEach(c=>((store.cols[c]||{}).docs||[]).forEach(d=>['nom','prenom','nomFamille','client','adresse','contact','code','vehicule'].forEach(k=>{const v=String(d.data[k]||'').trim();if(v)n.add(v);})));NOMS=n;}
+function aTraduire(t){const x=t.trim();if(!x||!/[A-Za-zÀ-ÿ]{2}/.test(x)||/@|https?:/.test(x)||NOMS.has(x))return '';return x;}
+function exclu(el){return !el||IGN.has(el.tagName)||!!el.closest('[translate="no"],.notranslate');}
+function poser(node,txt){POSE.set(node,txt);node.nodeValue=txt;}
+function traduireNoeud(node){
+  if(exclu(node.parentElement))return;
+  let o=ORIG.get(node);const cur=node.nodeValue;
+  if(o===undefined||(POSE.get(node)!==cur&&cur!==o)){o=cur;ORIG.set(node,o);}
+  const c=aTraduire(o);
+  if(LANG==='fr'||!c){if(cur!==o)poser(node,o);return;}
+  const tr=cacheTr(LANG)[c];
+  if(tr!=null){const v=o.replace(c,tr);if(cur!==v)poser(node,v);}
+  else{if(!attente.has(c))attente.set(c,[]);attente.get(c).push(node);planifier();}
+}
+const ATTR=['placeholder','title','aria-label'];
+function traduireAttr(el){
+  if(exclu(el))return;
+  ATTR.forEach(a=>{if(!el.hasAttribute(a))return;const k='data-o-'+a;let o=el.getAttribute(k);const cur=el.getAttribute(a);
+    if(o===null||(cur!==o&&el.getAttribute('data-t-'+a)!==cur)){o=cur;el.setAttribute(k,o);}
+    const c=aTraduire(o);if(LANG==='fr'||!c){if(cur!==o)el.setAttribute(a,o);return;}
+    const tr=cacheTr(LANG)[c];if(tr!=null){const v=o.replace(c,tr);el.setAttribute('data-t-'+a,v);if(cur!==v)el.setAttribute(a,v);}
+    else{if(!attente.has(c))attente.set(c,[]);attente.get(c).push(el);planifier();}});
+}
+function parcourir(root){
+  if(!root)return;
+  if(root.nodeType===3){traduireNoeud(root);return;}
+  if(root.nodeType!==1||exclu(root))return;
+  traduireAttr(root);
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT);let n;
+  while((n=w.nextNode())){if(n.nodeType===3)traduireNoeud(n);else traduireAttr(n);}
+}
+function planifier(){clearTimeout(minuteur);minuteur=setTimeout(envoyer,200);}
+async function envoyer(){
+  const l=LANG,lot=attente;attente=new Map();const textes=[...lot.keys()];
+  for(let i=0;i<textes.length;i+=60){const part=textes.slice(i,i+60);
+    try{const r=await rpc('traduire',part,l);const cache=cacheTr(l);part.forEach((t,k)=>{cache[t]=r[k]||t;});garderTr(l);}
+    catch(e){console.warn('traduction',e);continue;}
+    if(l!==LANG)return;
+    part.forEach(t=>(lot.get(t)||[]).forEach(n=>{if(n.nodeType===3)traduireNoeud(n);else traduireAttr(n);}));}
+}
+function appliquerLangue(){
+  document.documentElement.lang=LANG;document.documentElement.dir=LANG==='ar'?'rtl':'ltr';
+  majNoms();parcourir(document.body);
+}
+function changerLangue(l){LANG=l;LS.set('atlas-lang',l==='fr'?'':l);appliquerLangue();}
+new MutationObserver(ms=>{if(LANG==='fr')return;ms.forEach(m=>{
+  if(m.type==='characterData'){if(POSE.get(m.target)!==m.target.nodeValue)traduireNoeud(m.target);}
+  else if(m.type==='attributes'){traduireAttr(m.target);}
+  else m.addedNodes.forEach(n=>parcourir(n));});}).observe(document.documentElement,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:ATTR});
+const choixLangue=()=>`<label class="lang" translate="no">🌐 <select id="as-lang" aria-label="Langue">${LANGS.map(l=>`<option value="${l[0]}"${l[0]===LANG?' selected':''}>${esc(l[1])}</option>`).join('')}</select></label>`;
+function brancherLangue(d){const s=d.querySelector('#as-lang');if(s)s.onchange=()=>changerLangue(s.value);}
+
+/* ---------- Paramètres ---------- */
+function parametres(){
+  const p=PUSH?Notification.permission:'';
+  const notif=!PUSH?(IOS&&!STANDALONE?'Installe d\'abord l\'appli sur l\'écran d\'accueil pour recevoir les notifications.':'Les notifications ne sont pas disponibles sur ce navigateur.')
+    :p==='granted'&&LS.get('atlas-push')==='1'?'Activées sur cet appareil.':p==='denied'?'Bloquées : réactive-les dans les réglages du téléphone (Notifications, Planning Atlas).':'Pas encore activées.';
+  const d=ui(`<h2>Paramètres</h2>
+    <div class="sect"><h3>Langue</h3><select id="pa-lang" translate="no">${LANGS.map(l=>`<option value="${l[0]}"${l[0]===LANG?' selected':''}>${esc(l[1])}</option>`).join('')}</select>
+      <p>Les menus et les consignes sont traduits automatiquement (Google Traduction).</p></div>
+    <div class="sect"><h3>Notifications</h3><p>${notif}</p>${PUSH&&p!=='denied'?'<div class="row"><button class="btn primary" type="button" id="pa-n">Activer / tester les notifications</button></div>':''}</div>
+    <div class="sect"><h3>Cet appareil</h3><p>${PHONE?'Téléphone':'Ordinateur ou tablette'}${STANDALONE?' · appli installée':''}${mode==='bureau'&&PHONE?' · sur téléphone, le bureau consulte et valide les heures ; la création et les modifications se font sur ordinateur.':''}</p>
+      ${!STANDALONE&&installEvt?'<div class="row"><button class="btn" type="button" id="pa-i">Installer l\'appli</button></div>':''}
+      ${!PHONE&&!IOS&&/Windows/.test(UA)&&CFG.api?'<div class="row"><a class="btn" href="Planning-Atlas-Windows.exe" download>Télécharger le logiciel Windows</a></div>':''}</div>
+    <div class="sect"><h3>Compte</h3><p>${esc(ME?ME.nom||ME.mail:'')}${ME&&ME.mail?' · <span translate="no">'+esc(ME.mail)+'</span>':''}</p>
+      <div class="row"><button class="btn" type="button" id="pa-x">Fermer</button><button class="btn" type="button" id="pa-out">Se déconnecter</button></div></div>`);
+  d.querySelector('#pa-lang').onchange=e=>changerLangue(e.target.value);
+  d.querySelector('#pa-x').onclick=()=>closeUi();
+  d.querySelector('#pa-out').onclick=async()=>{if(!confirm('Se déconnecter de cet appareil ?'))return;try{await rpc('deconnecter',token);}catch(e){}LS.set('atlas-token','');location.reload();};
+  const n=d.querySelector('#pa-n');if(n)n.onclick=async()=>{const ok=await activerNotifs(true);if(ok){try{const k=await rpc('testNotif',token);toast(k?'Notification de test envoyée.':'Notifications activées.');}catch(e){toast(msg(e));}}closeUi();};
+  const i=d.querySelector('#pa-i');if(i)i.onclick=async()=>{if(!installEvt)return;installEvt.prompt();try{await installEvt.userChoice;}catch(e){}installEvt=null;closeUi();majBar();};
+}
+/* Bureau sur téléphone : consultation et validation seulement */
+const BLOQUE='[data-edit-inter],[data-del-inter],[data-add-day],[data-edit-eq],[data-edit-tech],[data-edit-ch],[data-new-eq],[data-new-ch],[data-new-tech],[data-new-acces],[data-edit-acces],[data-liberer],[data-export],#delEx,#addInter,[data-new-rap],[data-edit-rap]';
+document.addEventListener('click',ev=>{if(!document.documentElement.classList.contains('atlas-lecture'))return;const t=ev.target.closest(BLOQUE);if(!t)return;
+  ev.stopPropagation();ev.preventDefault();toast('Sur téléphone, le bureau consulte et valide. Pour créer ou modifier, utilise l\'ordinateur.');},true);
+
 async function setup(){
   const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+  appliquerLangue();
   let inf=null;
   for(let k=0;!inf;k++){try{inf=await rpc('info');}catch(e){ui(`<h2>Connexion…</h2><p>Le planning n'arrive pas à joindre Google. Vérifie la connexion internet du téléphone.</p><p class="err">${esc(clean(e))}</p>`);await new Promise(r=>setTimeout(r,Math.min(15000,2000+k*1000)));}}
   let me=null;
@@ -462,12 +556,13 @@ async function setup(){
   ME=me;mode=me.role==='bureau'?'bureau':'tech';uid=me.uid;window.__atlasMoi=me;
   closeUi();
   const bar=document.createElement('div');bar.id='atlas-bar';
-  bar.innerHTML=`<span>Connecté : <b>${esc(me.nom||me.mail)}</b>${mode==='bureau'?' (bureau)':''}</span><button type="button" class="on" id="ab-n" hidden>Activer les notifications</button><button type="button" class="on" id="ab-i" hidden>Installer l'appli</button><button type="button" id="ab-m">Se déconnecter</button>`;
+  bar.innerHTML=`<span>Connecté : <b>${esc(me.nom||me.mail)}</b>${mode==='bureau'?' (bureau)':''}</span><button type="button" class="on" id="ab-n" hidden>Activer les notifications</button><button type="button" class="on" id="ab-i" hidden>Installer l'appli</button><button type="button" id="ab-m">⚙ Paramètres</button>`;
   document.body.appendChild(bar);
   bar.querySelector('#ab-n').onclick=()=>activerNotifs(true);
   bar.querySelector('#ab-i').onclick=async()=>{if(!installEvt)return;installEvt.prompt();try{await installEvt.userChoice;}catch(e){}installEvt=null;majBar();};
   majBar();if(PUSH&&Notification.permission==='granted')activerNotifs(false);
-  bar.querySelector('#ab-m').onclick=async()=>{if(!confirm('Se déconnecter de cet appareil ?'))return;try{await rpc('deconnecter',token);}catch(e){}LS.set('atlas-token','');location.reload();};
+  bar.querySelector('#ab-m').onclick=()=>parametres();
+  if(mode==='bureau'&&PHONE)document.documentElement.classList.add('atlas-lecture');
   ready();
 }
 
@@ -486,6 +581,7 @@ function apply(res){
   keys.forEach(col=>{const docs=(by[col]||[]).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);const sig=JSON.stringify(docs);
     const old=store.cols[col];if(first||!old||old.sig!==sig){store.cols[col]={sig,docs};emit(col);}});
   offline(false);
+  majNoms();
 }
 let syncing=null,again=false;
 function sync(force){
