@@ -362,16 +362,27 @@ body{padding-bottom:64px}
 #atlas-setup .sect h3{margin:0;font:700 15px var(--f-display)}
 .atlas-lecture #addInter,.atlas-lecture [data-add-day],.atlas-lecture [data-new-eq],.atlas-lecture [data-new-ch],.atlas-lecture [data-new-tech],.atlas-lecture [data-new-acces],.atlas-lecture [data-edit-inter],.atlas-lecture [data-del-inter],.atlas-lecture #delEx,.atlas-lecture [data-export],.atlas-lecture [data-liberer],.atlas-lecture #an-cle,.atlas-lecture [data-new-rap]{display:none!important}
 [dir=rtl] #atlas-bar{left:auto;right:10px}
+#atlas-setup .lien{background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;font:inherit;font-size:14px;cursor:pointer}
+#atlas-setup .attente{font-size:18px;margin:4px 0}
+#atlas-dem{position:fixed;left:10px;right:10px;bottom:72px;z-index:2147483000;max-width:560px;margin:0 auto;display:grid;gap:8px}
+#atlas-dem .d{background:var(--surface,#fff);color:var(--ink);border:2px solid #1e7a33;border-radius:10px;padding:10px 12px;box-shadow:0 6px 24px rgba(0,0,0,.18);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#atlas-dem .d p{margin:0;flex:1 1 220px;font-size:14px}
 #atlas-off{position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:95;background:var(--bad);color:#fff;padding:9px 14px;border-radius:8px;font-size:14px;max-width:calc(100% - 20px)}`;
 function ui(html){let d=document.getElementById('atlas-setup');if(!d){d=document.createElement('div');d.id='atlas-setup';document.body.appendChild(d);}d.innerHTML=`<div class="box2">${html}</div>`;return d;}
 function closeUi(){const d=document.getElementById('atlas-setup');if(d)d.remove();}
-const MSG={mail:'Adresse mail invalide.',inconnu:"Cette adresse n'est pas enregistrée. Demande au bureau de l'ajouter.",trop:"Trop de demandes. Attends un quart d'heure.",faux:'Code incorrect.',expire:'Code expiré. Redemande un code.',autre_tel:"Ce compte est déjà relié à un autre téléphone. Demande au bureau de le libérer (onglet Bureau, tableau Techniciens).",appareil:'Appareil non reconnu. Recharge la page.'};
+const MSG={tel:'Numéro de téléphone invalide.',inconnu_tel:"Ce numéro n'est pas enregistré. Demande au bureau de le mettre sur ta fiche.",plus_de_demande:"Cette demande n'existe plus.",mail:'Adresse mail invalide.',inconnu:"Cette adresse n'est pas enregistrée. Demande au bureau de l'ajouter.",trop:"Trop de demandes. Attends un quart d'heure.",faux:'Code incorrect.',expire:'Code expiré. Redemande un code.',autre_tel:"Ce compte est déjà relié à un autre téléphone. Demande au bureau de le libérer (onglet Bureau, tableau Techniciens).",appareil:'Appareil non reconnu. Recharge la page.'};
 const msg=e=>{const m=clean(e);return MSG[m]||(/hors ligne|NetworkError|network/i.test(m)?'Pas de connexion internet.':m||'Erreur, réessaie.');};
 function ecranConnexion(){
   return new Promise(done=>{
     const d=ui(`${choixLangue()}<div class="brand"><span class="mark" aria-hidden="true"></span><div><h2>Planning chantiers</h2><p>Atlas Énergie</p></div></div>
-      <div id="as-1"><p>Entre ton adresse mail. Tu vas recevoir un code à 6 chiffres.</p>
-      <label class="fld" for="as-m">Adresse mail<div class="row"><input type="email" id="as-m" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" value="${esc(LS.get('atlas-mail'))}"><button class="btn primary" type="button" id="as-go">Recevoir mon code</button></div></label></div>
+      <div id="as-t1"><p>Entre ton numéro de téléphone.</p>
+      <label class="fld" for="as-t">Numéro de téléphone<div class="row"><input type="tel" id="as-t" autocomplete="tel" inputmode="tel" placeholder="06 12 34 56 78" value="${esc(LS.get('atlas-tel'))}"><button class="btn primary" type="button" id="as-tgo">Continuer</button></div></label>
+      <p><button type="button" class="lien" id="as-vm">Bureau : se connecter avec une adresse mail</button></p></div>
+      <div id="as-w" hidden><p class="attente">⏳ <b>Demande envoyée au bureau.</b></p><p>Dès que le bureau valide, le planning s'ouvre tout seul. Laisse l'appli ouverte.</p>
+      <div class="row"><button class="btn" type="button" id="as-wx">Annuler</button></div></div>
+      <div id="as-1" hidden><p>Entre ton adresse mail. Tu vas recevoir un code à 6 chiffres.</p>
+      <label class="fld" for="as-m">Adresse mail<div class="row"><input type="email" id="as-m" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" value="${esc(LS.get('atlas-mail'))}"><button class="btn primary" type="button" id="as-go">Recevoir mon code</button></div></label>
+      <p><button type="button" class="lien" id="as-vt">Technicien : se connecter avec son numéro</button></p></div>
       <div id="as-2" hidden><p id="as-info"></p>
       <label class="fld" for="as-c">Code reçu par mail<div class="row"><input type="text" id="as-c" inputmode="numeric" autocomplete="one-time-code" maxlength="6"><button class="btn primary" type="button" id="as-ok">Valider</button></div></label>
       <div class="row"><button class="btn" type="button" id="as-back">Changer d'adresse</button><button class="btn" type="button" id="as-again">Renvoyer un code</button></div></div>
@@ -379,22 +390,46 @@ function ecranConnexion(){
     const $=q=>d.querySelector(q),err=t=>{$('#as-e').textContent=t||'';};
     brancherLangue(d);
     let mail='';
+    const montre=id=>{['#as-t1','#as-w','#as-1','#as-2'].forEach(x=>{$(x).hidden=x!==id;});};
+    $('#as-vm').onclick=()=>{montre('#as-1');err('');$('#as-m').focus();};
+    $('#as-vt').onclick=()=>{montre('#as-t1');err('');$('#as-t').focus();};
+    if(LS.get('atlas-mail')&&!LS.get('atlas-tel'))montre('#as-1');
+    let fini=true;
+    const attendre=t=>{montre('#as-w');LS.set('atlas-attente','1');fini=false;
+      const tour=async()=>{if(fini)return;
+        try{const r=await rpc('etatAcces',t,DEV);if(fini)return;
+          if(r&&r.token){fini=true;LS.set('atlas-attente','');token=r.token;LS.set('atlas-token',token);done(r);return;}
+          if(r&&r.refuse){fini=true;LS.set('atlas-attente','');montre('#as-t1');err("Le bureau n'a pas validé la demande. Recommence ou appelle le bureau.");return;}}
+        catch(e){}
+        setTimeout(tour,4000);};
+      setTimeout(tour,2500);};
+    $('#as-wx').onclick=()=>{fini=true;LS.set('atlas-attente','');montre('#as-t1');};
+    const demander=async()=>{const t=$('#as-t').value.trim();err('');
+      if(t.replace(/\D/g,'').length<8){err(MSG.tel);return;}
+      const b=$('#as-tgo');b.disabled=true;b.textContent='Envoi…';
+      try{const r=await rpc('demanderAcces',t,DEV,MODELE);LS.set('atlas-tel',t);
+        if(r&&r.token){token=r.token;LS.set('atlas-token',token);done(r);return;}
+        attendre(t);}
+      catch(e){err(msg(e));}
+      b.disabled=false;b.textContent='Continuer';};
+    $('#as-tgo').onclick=demander;$('#as-t').onkeydown=e=>{if(e.key==='Enter')demander();};
+    if(LS.get('atlas-attente')==='1'&&LS.get('atlas-tel'))attendre(LS.get('atlas-tel'));
     const envoyer=async()=>{mail=$('#as-m').value.trim().toLowerCase();err('');
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)){err(MSG.mail);return;}
       const b=$('#as-go'),b2=$('#as-again');b.disabled=b2.disabled=true;b.textContent='Envoi…';
-      try{await rpc('demanderCode',mail,DEV);LS.set('atlas-mail',mail);$('#as-1').hidden=true;$('#as-2').hidden=false;
+      try{await rpc('demanderCode',mail,DEV);LS.set('atlas-mail',mail);montre('#as-2');
         $('#as-info').innerHTML=`Code envoyé à <b>${esc(mail)}</b>. Regarde aussi dans les spams.`;$('#as-c').value='';$('#as-c').focus();}
       catch(e){err(msg(e));}
       b.disabled=b2.disabled=false;b.textContent='Recevoir mon code';};
     const valider=async()=>{const c=$('#as-c').value.replace(/\D/g,'');err('');if(c.length!==6){err('Le code fait 6 chiffres.');return;}
       const b=$('#as-ok');b.disabled=true;
       try{const r=await rpc('valider',mail,c,DEV,MODELE);token=r.token;LS.set('atlas-token',token);done(r);}
-      catch(e){err(msg(e));if(clean(e)==='expire'){$('#as-1').hidden=false;$('#as-2').hidden=true;}}
+      catch(e){err(msg(e));if(clean(e)==='expire')montre('#as-1');}
       b.disabled=false;};
     $('#as-go').onclick=envoyer;$('#as-m').onkeydown=e=>{if(e.key==='Enter')envoyer();};
     $('#as-ok').onclick=valider;$('#as-c').onkeydown=e=>{if(e.key==='Enter')valider();};
     $('#as-c').oninput=()=>{if($('#as-c').value.replace(/\D/g,'').length===6)valider();};
-    $('#as-back').onclick=()=>{$('#as-1').hidden=false;$('#as-2').hidden=true;err('');$('#as-m').focus();};
+    $('#as-back').onclick=()=>{montre('#as-1');err('');$('#as-m').focus();};
     $('#as-again').onclick=envoyer;
   });
 }
@@ -581,7 +616,23 @@ function apply(res){
   keys.forEach(col=>{const docs=(by[col]||[]).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);const sig=JSON.stringify(docs);
     const old=store.cols[col];if(first||!old||old.sig!==sig){store.cols[col]={sig,docs};emit(col);}});
   offline(false);
-  majNoms();
+  try{majNoms();majDemandes();}catch(e){console.warn(e);}
+}
+function majDemandes(){
+  let box=document.getElementById('atlas-dem');
+  const l=mode==='bureau'?((store.cols.demandes||{}).docs||[]):[];
+  if(!l.length){if(box)box.remove();return;}
+  if(!box){box=document.createElement('div');box.id='atlas-dem';box.setAttribute('role','region');box.setAttribute('aria-label','Demandes de connexion');document.body.appendChild(box);
+    box.addEventListener('click',async ev=>{const b=ev.target.closest('[data-dem-ok],[data-dem-non]');if(!b)return;
+      const ok=b.hasAttribute('data-dem-ok'),id=ok?b.dataset.demOk:b.dataset.demNon;
+      if(!ok&&!confirm('Refuser cette demande de connexion ?'))return;
+      box.querySelectorAll('button').forEach(x=>x.disabled=true);
+      try{apply(await rpc(ok?'autoriserAcces':'refuserAcces',id,token));toast(ok?'Téléphone autorisé. Le technicien est connecté.':'Demande refusée.');}
+      catch(e){toast(msg(e));sync(true);}
+      box.querySelectorAll('button').forEach(x=>x.disabled=false);});}
+  box.innerHTML=l.map(x=>{const d=x.data||{};const q=d.le?new Date(d.le):null;
+    return `<div class="d"><p>📲 <b>${esc(d.nom||'Un technicien')}</b> veut se connecter${d.modele?' sur un <b>'+esc(d.modele)+'</b>':''}${q&&!isNaN(q)?' ('+q.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+')':''}.<br><span style="color:var(--muted)">Autorise seulement si c'est bien son téléphone.</span></p>
+      <button class="btn primary" type="button" data-dem-ok="${esc(x.id)}">Autoriser</button><button class="btn" type="button" data-dem-non="${esc(x.id)}">Refuser</button></div>`;}).join('');
 }
 let syncing=null,again=false;
 function sync(force){
@@ -915,7 +966,7 @@ function drawBureau(){
   const eqRows=S.eq.map(e=>{const chef=teById(e.chef);return `<tr class="click" data-edit-eq="${esc(e.id)}"><td><span class="dot" style="--c:${col(e.couleur)}"></span><b>${esc(e.nom)}</b></td><td>${esc(e.code)}</td><td>${esc(chef?chef.nom:'')}</td><td class="num">${S.te.filter(t=>t.equipeId===e.id).length||''}</td></tr>`;}).join('')||'<tr><td colspan="4" class="muted">Aucune équipe.</td></tr>';
   const allLinked=[];S.te.forEach(t=>allLinked.push.apply(allLinked,linkedUsers(t.id)));resolveNames(allLinked);
   const teRows=techs().map(t=>{const us=linkedUsers(t.id);const nm=us.map(u=>S.names[u]||'compte lié').join(', ');
-    return `<tr class="click" data-edit-tech="${esc(t.id)}"><td><span class="dot" style="--c:${eqColor(t.equipeId)}"></span><b>${esc(t.nom)}</b><div class="muted">${esc([t.prenom,t.nomFamille].filter(Boolean).join(' '))}</div></td><td>${esc(eqName(t.equipeId))}</td><td>${esc(t.poste)}</td><td class="num">${esc(t.tel)}</td><td>${esc(t.habil)}</td><td>${t.mail?`<span>${esc(t.mail)}</span><div class="muted">${telCell(t)}</div>`:'<span class="muted">Pas de mail</span>'}</td></tr>`;}).join('')||'<tr><td colspan="6" class="muted">Aucun technicien.</td></tr>';
+    return `<tr class="click" data-edit-tech="${esc(t.id)}"><td><span class="dot" style="--c:${eqColor(t.equipeId)}"></span><b>${esc(t.nom)}</b><div class="muted">${esc([t.prenom,t.nomFamille].filter(Boolean).join(' '))}</div></td><td>${esc(eqName(t.equipeId))}</td><td>${esc(t.poste)}</td><td class="num">${esc(t.tel)}</td><td>${esc(t.habil)}</td><td>${t.mail?`<span>${esc(t.mail)}</span>`:''}<div class="muted">${telCell(t)}</div></td></tr>`;}).join('')||'<tr><td colspan="6" class="muted">Aucun technicien.</td></tr>';
   const chRows=S.ch.slice().sort((a,b)=>(ST_ORD[a.statut]??1)-(ST_ORD[b.statut]??1)||(a.debut||'').localeCompare(b.debut||'')).map(c=>{const all=S.I.filter(i=>i.chantierId===c.id);const done=all.filter(i=>i.statut==='Fait').length;
     return `<tr class="click" data-chantier="${esc(c.id)}"><td><b>${esc(c.nom)}</b><div class="muted">${esc(c.client)}</div></td><td>${esc(c.adresse)}</td><td class="num">${fmtShort(c.debut)}${c.fin?' au '+fmtShort(c.fin):''}</td><td><b class="st ${c.statut==='En cours'?'ok':c.statut==='En pause'?'warn':'neutral'}">${esc(c.statut||'À venir')}</b></td><td class="num">${done}/${all.length}</td></tr>`;}).join('')||'<tr><td colspan="5" class="muted">Aucun chantier.</td></tr>';
   return `<div class="g-grid">
@@ -1160,12 +1211,12 @@ function techForm(t){
    <div class="two"><label class="fld" for="t-p">Prénom<input type="text" id="t-p" name="prenom" maxlength="60" value="${esc(x.prenom)}"></label><label class="fld" for="t-nf">Nom<input type="text" id="t-nf" name="nomFamille" maxlength="60" value="${esc(x.nomFamille)}"></label></div>
    <label class="fld" for="t-n">Nom affiché dans le planning<input type="text" id="t-n" name="nom" maxlength="60" value="${esc(x.nom)}" placeholder="Ex. Karim B."></label>
    <div class="two"><label class="fld" for="t-e">Équipe<select id="t-e" name="equipeId">${optsId(S.eq,x.equipeId,'Sans équipe')}</select></label><label class="fld" for="t-po">Poste<input type="text" id="t-po" name="poste" maxlength="80" value="${esc(x.poste)}" placeholder="Ex. Frigoriste"></label></div>
-   <div class="two"><label class="fld" for="t-t">Téléphone<input type="tel" id="t-t" name="tel" maxlength="30" value="${esc(x.tel)}"></label><label class="fld" for="t-v">Véhicule<input type="text" id="t-v" name="vehicule" maxlength="60" value="${esc(x.vehicule)}"></label></div>
+   <div class="two"><label class="fld" for="t-t">Téléphone (sert à se connecter à l'appli)<input type="tel" id="t-t" name="tel" maxlength="30" value="${esc(x.tel)}"></label><label class="fld" for="t-v">Véhicule<input type="text" id="t-v" name="vehicule" maxlength="60" value="${esc(x.vehicule)}"></label></div>
    <label class="fld" for="t-h">Habilitations / attestations<input type="text" id="t-h" name="habil" maxlength="300" value="${esc(x.habil)}" placeholder="Ex. fluides frigorigènes cat. I, PGN/PGP, habilitation BR"></label>
-   <label class="fld" for="t-m">Adresse mail (pour se connecter à l'appli)<input type="email" id="t-m" name="mail" maxlength="120" value="${esc(x.mail||'')}" placeholder="prenom.nom@gmail.com" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+   <label class="fld" for="t-m">Adresse mail (facultatif)<input type="email" id="t-m" name="mail" maxlength="120" value="${esc(x.mail||'')}" placeholder="prenom.nom@gmail.com" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
    <label class="fld" for="t-r">Remarques<input type="text" id="t-r" name="remarques" maxlength="500" value="${esc(x.remarques)}"></label>`,
   async f=>{const o={nom:v(f,'nom'),prenom:v(f,'prenom'),nomFamille:v(f,'nomFamille'),equipeId:v(f,'equipeId'),poste:v(f,'poste'),tel:v(f,'tel'),mail:v(f,'mail').toLowerCase(),habil:v(f,'habil'),vehicule:v(f,'vehicule'),remarques:v(f,'remarques'),ordre:t?(t.ordre||0):Date.now()};
-    if(!o.nom)return 'Indique le nom affiché.';if(o.mail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.mail))return 'Adresse mail invalide.';if(o.mail&&mailPris(o.mail,t?t.id:''))return 'Cette adresse mail est déjà utilisée.';if(S.te.some(y=>y.nom===o.nom&&(!t||y.id!==t.id)))return 'Un autre technicien porte déjà ce nom affiché.';
+    if(!o.nom)return 'Indique le nom affiché.';if(o.mail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.mail))return 'Adresse mail invalide.';if(o.mail&&mailPris(o.mail,t?t.id:''))return 'Cette adresse mail est déjà utilisée.';if(o.tel&&telPris(o.tel,t?t.id:''))return 'Ce numéro est déjà sur la fiche d\'un autre technicien.';if(S.te.some(y=>y.nom===o.nom&&(!t||y.id!==t.id)))return 'Un autre technicien porte déjà ce nom affiché.';
     if(t&&t.exemple)o.exemple=true;
     return (await write(t?coll('techniciens').doc(t.id):coll('techniciens').doc(),o,'plan'))?true:undefined;},
   {extra:t?'<button type="button" class="btn danger" id="delT">Supprimer</button>':'',onReady:f=>{
@@ -1204,6 +1255,8 @@ function deleteExamples(){
 }
 
 /* ---------- Accès bureau (connexion par mail) ---------- */
+const telN=t=>{let s=String(t||'').replace(/[^\d+]/g,'');if(s.indexOf('00')===0)s='+'+s.slice(2);if(s.indexOf('+33')===0)s='0'+s.slice(3).replace(/^0/,'');return s;};
+function telPris(n,saufTech){n=telN(n);return !!n&&S.te.some(y=>telN(y.tel)===n&&y.id!==saufTech);}
 function mailPris(m,saufTech,saufAcces){m=String(m||'').toLowerCase();const moi=window.__atlasMoi||{};
   return (moi.principaux||[]).indexOf(m)>=0||S.te.some(y=>String(y.mail||'').toLowerCase()===m&&y.id!==saufTech)||(S.acces||[]).some(a=>String(a.mail||'').toLowerCase()===m&&a.id!==saufAcces);}
 function accRows(){const moi=window.__atlasMoi||{};
@@ -1223,7 +1276,8 @@ function accesForm(a){
   {extra:a?'<button type="button" class="btn danger" id="delA">Retirer l\'accès</button>':'',onReady:f=>{const b=f.querySelector('#delA');if(b)b.onclick=()=>confirmBox('Retirer l\'accès',`Retirer l'accès bureau de <b>${esc(a.nom)}</b> ? Ses appareils seront déconnectés.`,'Retirer',async()=>{await write(coll('acces').doc(a.id),null,'plan');});}});
 }
 function telCell(t){const ap=(S.app||[]).find(a=>a.techId===t.id);
-  if(!ap)return 'Pas encore connecté';
+  if(!ap&&(S.dem||[]).some(a=>a.techId===t.id))return '<b>Demande de connexion en attente</b> (à valider en bas de l\'écran)';
+  if(!ap)return t.tel||t.mail?'Pas encore connecté':'Ajoute son numéro pour qu\'il puisse se connecter';
   const d=ap.le?new Date(ap.le):null;
   return `Téléphone relié${ap.modele?' ('+esc(ap.modele)+')':''}${d&&!isNaN(d)?' le '+d.toLocaleDateString('fr-FR'):''} <button type="button" class="btn" style="padding:2px 9px;font-size:12px;margin-left:4px" data-liberer="${esc(ap.id)}">Libérer</button>`;}
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-liberer]');if(!b)return;ev.stopPropagation();ev.preventDefault();
@@ -1328,6 +1382,7 @@ async function start(){
   sub('liens',a=>{const m={};a.forEach(l=>{if(typeof l.techId==='string'&&l.techId)m[l.id]=l.techId;});S.liens=m;S.lienKeys=a.map(l=>l.id);syncRapports();});
   sub('acces',a=>{S.acces=a.filter(x=>str(x.mail));});
   sub('appareils',a=>{S.app=a;});
+  sub('demandes',a=>{S.dem=a;});
   sub('validations',a=>{const m={};a.forEach(x=>{if(x.valide)m[x.id]=true;});S.val=m;});
   syncRapports();
 }
