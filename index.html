@@ -268,7 +268,7 @@ input[type="number"]{background:var(--surface);border:1px solid var(--line);bord
 :root{--paper:#f8f9f9;--surface:#ffffff;--ink:#12241a;--muted:#56675c;--line:#d3dbd1;
   --accent:#1e7a33;--accent-ink:#ffffff;--ok:#1e7a33;--warn:#b86e0c;--bad:#c53b33;--today:rgba(246,181,44,.16);
   --f-display:"Gabarito",ui-sans-serif,system-ui,sans-serif;--f-body:"Figtree",ui-sans-serif,system-ui,sans-serif;color-scheme:light}
-.mark{background:#fff url(https://atlas-energie.github.io/planning-atlas-energie/logo.png) center/contain no-repeat!important;width:38px!important;height:38px!important;border-radius:8px!important}
+.mark{background:#fff url(https://atlas-energie.github.io/planning-atlas-energie/logo.png?v=2) center/84% no-repeat!important;width:48px!important;height:48px!important;border-radius:12px!important;flex:none;box-shadow:0 1px 4px rgba(0,0,0,.2)}
 .brand h1,#atlas-setup h2{font-stretch:100%!important;letter-spacing:0!important;text-transform:none!important;font-weight:800!important;color:var(--ink)}
 .btn{border-radius:10px}
 .btn.primary{background:#f6b52c;border-color:#f6b52c;color:#12241a}
@@ -278,7 +278,10 @@ input[type="number"]{background:var(--surface);border:1px solid var(--line);bord
 body{background:var(--paper)}
 .top{background:#1e7a33!important;color:#fff;border-bottom:0!important;padding:10px 16px!important;box-shadow:0 2px 8px rgba(18,36,26,.18);flex-wrap:nowrap!important}
 .brand h1{color:#fff!important}.brand p{color:rgba(255,255,255,.85)!important}
-.mark{border:2px solid #fff}
+.brand{gap:12px!important}
+#atlas-setup .brand{flex-direction:column;text-align:center;gap:10px!important;margin:4px 0 6px}
+#atlas-setup .brand .mark{width:96px!important;height:96px!important;border-radius:20px!important;box-shadow:0 2px 10px rgba(18,36,26,.15)}
+#atlas-setup .brand h2{margin:0}
 #who{display:none!important}
 .tabs{background:#fff!important;border-bottom:1px solid var(--line)!important;padding:0 12px!important;gap:2px!important;box-shadow:0 1px 3px rgba(18,36,26,.05)}
 .tab{position:relative;display:inline-flex!important;align-items:center;gap:7px;padding:12px 14px!important;font-size:14.5px!important;border-bottom:3px solid transparent}
@@ -290,6 +293,7 @@ body{background:var(--paper)}
 .btn{min-height:40px}
 @media (max-width:760px){
   .brand p{display:none}.brand h1{font-size:17px!important}
+  .top .mark{width:42px!important;height:42px!important;border-radius:11px!important}
   .tabs{position:fixed!important;left:0;right:0;bottom:0;z-index:40;justify-content:space-around;padding:2px 2px calc(4px + env(safe-area-inset-bottom))!important;border-top:1px solid var(--line);border-bottom:0!important;box-shadow:0 -2px 12px rgba(18,36,26,.10);overflow:visible!important}
   .tab{flex:1 1 0;flex-direction:column;gap:3px!important;padding:7px 2px 5px!important;font-size:11.5px!important;line-height:1.1;white-space:normal!important;text-align:center;min-width:0;border-bottom:0!important;border-top:3px solid transparent}
   .tab[aria-selected="true"]{border-top-color:#f6b52c!important;background:rgba(30,122,51,.07)}
