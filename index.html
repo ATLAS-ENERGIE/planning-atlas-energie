@@ -360,7 +360,13 @@ body{padding-bottom:64px}
 #atlas-setup .lang select{width:auto;padding:6px 8px;font-size:14px}
 #atlas-setup .sect{border-top:1px solid var(--line);padding-top:12px;display:grid;gap:8px}
 #atlas-setup .sect h3{margin:0;font:700 15px var(--f-display)}
-.atlas-lecture #addInter,.atlas-lecture [data-add-day],.atlas-lecture [data-new-eq],.atlas-lecture [data-new-ch],.atlas-lecture [data-new-tech],.atlas-lecture [data-new-acces],.atlas-lecture [data-edit-inter],.atlas-lecture [data-del-inter],.atlas-lecture #delEx,.atlas-lecture [data-export],.atlas-lecture [data-liberer],.atlas-lecture #an-cle,.atlas-lecture [data-new-rap]{display:none!important}
+.atlas-lecture #addInter,.atlas-lecture [data-add-day],.atlas-lecture [data-new-eq],.atlas-lecture [data-new-ch],.atlas-lecture [data-new-tech],.atlas-lecture [data-new-acces],.atlas-lecture [data-edit-inter],.atlas-lecture [data-del-inter],.atlas-lecture #delEx,.atlas-lecture [data-export],.atlas-lecture [data-liberer],.atlas-lecture #an-cle,.atlas-lecture [data-new-rap],.atlas-lecture [data-new-st],.atlas-lecture [data-doc-del]{display:none!important}
+.docs{display:grid}
+.doc{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.doc .ic{font:700 11px/1 var(--f-body);color:#fff;border-radius:6px;padding:8px 5px;min-width:36px;text-align:center;background:#c53b33}
+.doc .ic.img{background:#1e7a33}
+.doc .dx{flex:1;min-width:0}.doc .dx b{display:block;overflow-wrap:anywhere}
+.doc .btn{flex:none}
 [dir=rtl] #atlas-bar{left:auto;right:10px}
 #atlas-setup .lien{background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;font:inherit;font-size:14px;cursor:pointer}
 #atlas-setup .attente{font-size:18px;margin:4px 0}
@@ -484,14 +490,17 @@ async function boiteNotif(box){
 function fenetreCle(box){
   const d=ui(`<h2>Clé Firebase</h2>
     <ol><li>Ouvre <b>console.firebase.google.com</b>, projet <b>Planning Atlas</b>.</li>
-    <li>Roue crantée, <b>Paramètres du projet</b>, onglet <b>Comptes de service</b>.</li>
-    <li>Clique <b>Générer une nouvelle clé privée</b>, puis <b>Générer la clé</b> : un fichier se télécharge.</li>
-    <li>Ouvre ce fichier avec le Bloc-notes, sélectionne tout (Ctrl+A), copie, et colle ci-dessous.</li></ol>
+    <li>Roue crantée, <b>Paramètres du projet</b>, onglet <b>Comptes de service</b>, puis <b>SDK Admin Firebase</b> dans la colonne de gauche (pas « Secrets de la base de données »).</li>
+    <li>Clique <b>Générer une nouvelle clé privée</b>, puis <b>Générer la clé</b> : un fichier .json se télécharge.</li>
+    <li>Clique ci-dessous sur <b>Choisir le fichier</b> et prends ce fichier dans Téléchargements, puis <b>Enregistrer</b>.</li></ol>
+    <div class="row"><label class="btn" for="an-f">Choisir le fichier .json</label><input type="file" id="an-f" accept=".json,application/json" hidden><span id="an-fn" style="color:var(--muted);font-size:14px"></span></div>
     <textarea id="an-k" spellcheck="false" autocomplete="off" placeholder='{"type": "service_account", ...}'></textarea>
     <p class="err" id="an-e" role="alert"></p>
     <div class="row"><button class="btn primary" type="button" id="an-ok">Enregistrer</button><button class="btn" type="button" id="an-x">Annuler</button></div>
     <p>La clé reste sur ton compte Google : elle n'est jamais renvoyée aux téléphones. Tu peux ensuite supprimer le fichier téléchargé.</p>`);
   d.querySelector('#an-x').onclick=()=>closeUi();
+  d.querySelector('#an-f').onchange=async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;
+    try{d.querySelector('#an-k').value=await f.text();d.querySelector('#an-fn').textContent=f.name+' chargé';}catch(x){d.querySelector('#an-e').textContent='Lecture du fichier impossible.';}};
   d.querySelector('#an-ok').onclick=async()=>{const b=d.querySelector('#an-ok');b.disabled=true;d.querySelector('#an-e').textContent='';
     try{await rpc('reglerNotif',d.querySelector('#an-k').value,token);closeUi();toast('Clé enregistrée : les notifications sont prêtes.');delete box.dataset.ok;boiteNotif(box);}
     catch(x){d.querySelector('#an-e').textContent=msg(x);}b.disabled=false;};
@@ -576,7 +585,7 @@ function parametres(){
   const i=d.querySelector('#pa-i');if(i)i.onclick=async()=>{if(!installEvt)return;installEvt.prompt();try{await installEvt.userChoice;}catch(e){}installEvt=null;closeUi();majBar();};
 }
 /* Bureau sur téléphone : consultation et validation seulement */
-const BLOQUE='[data-edit-inter],[data-del-inter],[data-add-day],[data-edit-eq],[data-edit-tech],[data-edit-ch],[data-new-eq],[data-new-ch],[data-new-tech],[data-new-acces],[data-edit-acces],[data-liberer],[data-export],#delEx,#addInter,[data-new-rap],[data-edit-rap]';
+const BLOQUE='[data-new-st],[data-edit-st],[data-doc-del],[data-edit-inter],[data-del-inter],[data-add-day],[data-edit-eq],[data-edit-tech],[data-edit-ch],[data-new-eq],[data-new-ch],[data-new-tech],[data-new-acces],[data-edit-acces],[data-liberer],[data-export],#delEx,#addInter,[data-new-rap],[data-edit-rap]';
 document.addEventListener('click',ev=>{if(!document.documentElement.classList.contains('atlas-lecture'))return;const t=ev.target.closest(BLOQUE);if(!t)return;
   ev.stopPropagation();ev.preventDefault();toast('Sur téléphone, le bureau consulte et valide. Pour créer ou modifier, utilise l\'ordinateur.');},true);
 
@@ -678,6 +687,38 @@ function fill(img){const m=/#atlas-([A-Za-z0-9_-]+)$/.exec(img.getAttribute('src
 new MutationObserver(ms=>{ms.forEach(m=>{m.addedNodes.forEach(n=>{if(n.nodeType!==1)return;if(n.tagName==='IMG')fill(n);n.querySelectorAll&&n.querySelectorAll('img[src*="#atlas-"]').forEach(fill);});
   if(m.type==='attributes'&&m.target.tagName==='IMG')fill(m.target);});}).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src']});
 const toB64=blob=>new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]||'');r.onerror=ko;r.readAsDataURL(blob);});
+/* Documents de chantier (PDF ou photo) */
+async function reduireImage(file){
+  const url=URL.createObjectURL(file);
+  try{const img=await new Promise((ok,ko)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=ko;im.src=url;});
+    const M=2400;let w=img.naturalWidth,h=img.naturalHeight;const k=Math.min(1,M/Math.max(w,h));w=Math.max(1,Math.round(w*k));h=Math.max(1,Math.round(h*k));
+    const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+    return await new Promise(ok=>c.toBlob(ok,'image/jpeg',0.85));}
+  catch(e){return null;}finally{URL.revokeObjectURL(url);}
+}
+window.__atlasDoc={
+  upload:async file=>{
+    let b=file,nom=String(file.name||'document');
+    const image=/^image\//.test(file.type)||/\.(jpe?g|png|webp|heic|heif)$/i.test(nom);
+    if(image){const r=await reduireImage(file);if(!r)throw new Error('unsupported_type');b=r;nom=nom.replace(/\.[^.]*$/,'')+'.jpg';}
+    else if(!(file.type==='application/pdf'||/\.pdf$/i.test(nom)))throw new Error('unsupported_type');
+    if(b.size>10*1024*1024)throw new Error('too_large');
+    const b64=await toB64(b);
+    try{const r=await rpc('uploadDoc',b64,nom,token);return Object.assign({nom},r);}
+    catch(e){throw new Error(clean(e));}},
+  ouvrir:async(id,nom,mime)=>{
+    const fen=!PHONE&&mime==='application/pdf'?window.open('','_blank'):null;
+    toast('Ouverture du document…');
+    let u='';try{u=await rpc('getPhoto',id,token);}catch(e){}
+    if(!u){if(fen)fen.close();toast('Document indisponible.');return;}
+    if(mime!=='application/pdf'){const d=document.createElement('div');d.className='lightbox';d.setAttribute('role','dialog');d.setAttribute('aria-label','Document');d.innerHTML='<img alt="Document">';d.querySelector('img').src=u;d.onclick=()=>d.remove();document.body.appendChild(d);return;}
+    const bin=atob(u.split(',')[1]||'');const arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
+    const url=URL.createObjectURL(new Blob([arr],{type:'application/pdf'}));
+    if(fen){fen.location.href=url;}
+    else{const a=document.createElement('a');a.href=url;a.download=nom||'document.pdf';document.body.appendChild(a);a.click();a.remove();}
+    setTimeout(()=>URL.revokeObjectURL(url),120000);},
+  remove:id=>{rpc('deletePhoto',id,token).catch(()=>{});}
+};
 const assets={
   upload:async blob=>{let b64;try{b64=await toB64(blob);}catch(e){throw {code:'invalid_request',message:'lecture'};}
     try{const r=await rpc('uploadPhoto',b64,token);photoCache.set(r.id,'data:'+(blob.type||'image/jpeg')+';base64,'+b64);return Object.assign(r,{url:window.__atlasBlob(r.id)});}
@@ -726,11 +767,14 @@ const ST_RAP=['Fait','En cours','Problème','Reporté'];
 const ST_RAP_LBL={'Fait':'C\'est bon, terminé','En cours':'En cours','Problème':'Problème','Reporté':'Reporté'};
 const fmtH=n=>(Math.round(n*100)/100).toLocaleString('fr-FR')+' h';
 const okId=s=>typeof s==='string'&&/^[A-Za-z0-9_.~:@+-]{1,180}$/.test(s);
+const ST_COL='#b5651d';
+const isST=t=>!!t&&t.type==='st';
+const DOC_TYPES=['Attestation d\'entretien','Quitus de levée de réserves','PV de réception','Rapport / compte rendu','Plan / schéma','Devis / bon de commande','Photo','Autre'];
 
 const S={eq:[],te:[],ch:[],it:[],pt:{},liens:{},lienKeys:[],rp:{},R:[],val:{},I:[],today:iso(new Date()),weekStart:monday(new Date()),
   view:'',mode:'equipes',filtre:'',owner:false,canWrite:null,db:null,user:null,uid:null,assets:null,dl:null,ready:false,names:{},asked:false,rsubs:{}};
 const ls={get(k){try{return localStorage.getItem(k)||'';}catch(e){return '';}},set(k,v){try{if(v)localStorage.setItem(k,v);else localStorage.removeItem(k);}catch(e){}}};
-S.mode=ls.get('atlas-mode')||'equipes';S.filtre=ls.get('atlas-filtre');
+S.docs=[];S.mode=ls.get('atlas-mode')||'equipes';S.filtre=ls.get('atlas-filtre');
 const mq=window.matchMedia('(max-width: 760px)');
 const narrow=()=>mq.matches;
 
@@ -739,11 +783,17 @@ const eqById=id=>S.eq.find(e=>e.id===id);
 const teById=id=>S.te.find(t=>t.id===id);
 const chById=id=>S.ch.find(c=>c.id===id);
 const eqColor=id=>{const e=eqById(id);return e?col(e.couleur):GREY;};
-function techs(){const ord=t=>{const e=eqById(t.equipeId);return (e?S.eq.indexOf(e):99)*1e6+(t.ordre||0);};return S.te.slice().sort((a,b)=>ord(a)-ord(b)||a.nom.localeCompare(b.nom));}
+function techs(){const ord=t=>{const e=eqById(t.equipeId);return (e?S.eq.indexOf(e):99)*1e6+(t.ordre||0);};return S.te.filter(t=>!isST(t)).sort((a,b)=>ord(a)-ord(b)||a.nom.localeCompare(b.nom));}
+function sts(){return S.te.filter(isST).sort((a,b)=>a.nom.localeCompare(b.nom));}
+const isSTid=id=>isST(teById(id));
+const meST=()=>isST(myTech());
 const named=i=>i.techIds.filter(id=>teById(id));
+const stOnly=i=>{const n=named(i);return n.length>0&&n.every(isSTid);};
+const hasST=i=>named(i).some(isSTid);
+const stNames=i=>named(i).filter(isSTid).map(id=>teById(id).nom).join(', ');
 function assignedTo(i,t){const n=named(i);if(n.length)return n.indexOf(t.id)>=0;return !!i.equipeId&&i.equipeId===t.equipeId;}
 function teamOf(i){if(i.equipeId&&eqById(i.equipeId))return i.equipeId;const t=teById(named(i)[0]);return t?t.equipeId:'';}
-const colorOf=i=>eqColor(teamOf(i));
+const colorOf=i=>stOnly(i)?ST_COL:eqColor(teamOf(i));
 const chName=i=>{const c=chById(i.chantierId);return c?c.nom:'Chantier supprimé';};
 const eqName=id=>{const e=eqById(id);return e?e.nom:'';};
 const inDay=(i,d)=>i.debut<=d&&i.fin>=d;
@@ -773,6 +823,7 @@ function recompute(){
       statut,remarque:last?last.observation:str(p.remarque),lastTech:last?last.techId:str(p.parTech),
       rapports:rs,heures:rs.reduce((s,r)=>s+r.heures,0)});
   });
+  if(!S.owner){const me=myTech();if(me&&!isST(me))S.I=S.I.filter(i=>!stOnly(i)||i.visibleSal!==false);}
 }
 const wkKey=d=>iso(monday(parse(d)));
 const isValid=(techId,date)=>!!S.val[techId+'_'+wkKey(date)];
@@ -806,7 +857,8 @@ async function write(ref,data,kind){
 const coll=n=>S.db.collection(n);
 
 /* ---------- Rendu ---------- */
-function views(){const v=[];if(myTech())v.push(['moi','Mon planning']);v.push(['semaine','Semaine'],['chantiers','Chantiers']);if(S.owner)v.push(['heures','Heures'],['bureau','Bureau']);return v;}
+function views(){const v=[];const me=myTech();if(me)v.push(['moi','Mon planning']);if(isST(me))return v;
+  v.push(['semaine',S.owner?'Salariés':'Semaine']);if(S.owner)v.push(['soustraitants','Sous-traitants']);v.push(['chantiers','Chantiers']);if(S.owner)v.push(['heures','Heures'],['bureau','Bureau']);return v;}
 let raf=0;function render(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;draw();});}
 function draw(){
   const vs=views();if(!vs.some(x=>x[0]===S.view))S.view=vs[0][0];
@@ -816,7 +868,7 @@ function draw(){
   const w=$('#who');w.hidden=!S.ready||!S.db;const t=myTech();
   $('#whoName').textContent=S.owner?'Bureau':(t?t.nom:'Choisir mon nom');
   w.style.setProperty('--c',S.owner?'var(--accent)':(t?eqColor(t.equipeId):'var(--muted)'));w.disabled=S.owner;
-  $('#toolbar').hidden=!(S.view==='semaine'||S.view==='chantiers'||S.view==='heures');
+  $('#toolbar').hidden=!(S.view==='semaine'||S.view==='soustraitants'||S.view==='chantiers'||S.view==='heures');
   $('#mode').hidden=S.view!=='semaine'||narrow();
   document.querySelectorAll('#mode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===S.mode));
   $('#addInter').hidden=!S.owner;
@@ -828,12 +880,14 @@ function draw(){
   if(S.view==='moi')m.innerHTML=drawMoi();
   else if(S.view==='semaine')m.innerHTML=narrow()?drawAgenda():drawSemaine();
   else if(S.view==='chantiers')m.innerHTML=drawGantt();
+  else if(S.view==='soustraitants')m.innerHTML=drawST();
   else if(S.view==='heures')m.innerHTML=drawHeures();
   else m.innerHTML=drawBureau();
 }
 function drawFiltre(){
   const o=['<option value="">Tout le monde</option>','<optgroup label="Équipes">'+S.eq.map(e=>`<option value="e:${esc(e.id)}">${esc(e.nom)}</option>`).join('')+'</optgroup>',
-    '<optgroup label="Techniciens">'+techs().map(t=>`<option value="t:${esc(t.id)}">${esc(t.nom)}</option>`).join('')+'</optgroup>'].join('');
+    '<optgroup label="Techniciens">'+techs().map(t=>`<option value="t:${esc(t.id)}">${esc(t.nom)}</option>`).join('')+'</optgroup>',
+    sts().length?'<optgroup label="Sous-traitants">'+sts().map(t=>`<option value="t:${esc(t.id)}">${esc(t.nom)}</option>`).join('')+'</optgroup>':''].join('');
   const sel=$('#filtre');if(sel.dataset.sig!==o){sel.innerHTML=o;sel.dataset.sig=o;}
   const v=S.filtre.slice(2);if(S.filtre&&S.ready&&!(S.filtre[0]==='e'?eqById(v):teById(v)))S.filtre='';
   sel.value=S.filtre;
@@ -879,9 +933,27 @@ function drawAgenda(){
   const e0=needSetup();if(e0)return e0;
   let h='<div class="agenda">';
   for(let k=0;k<6;k++){const d=iso(addDays(S.weekStart,k));
-    const its=sortDay(S.I.filter(i=>inDay(i,d)&&passFiltre(i)));
+    const its=sortDay(S.I.filter(i=>inDay(i,d)&&passFiltre(i)&&!(S.owner&&stOnly(i))));
     h+=`<section class="agd ${d===S.today?'today':''}"><h3>${JOURS[k]} ${fmtD(parse(d))}${d===S.today?' <b class="st warn">Aujourd\'hui</b>':''}</h3>${its.length?its.map(i=>chip(i,d,{q:eqName(teamOf(i)),who:true})).join(''):'<div class="none">Rien de prévu</div>'}</section>`;}
   return h+'</div>';
+}
+
+/* Planning des sous-traitants (bureau) */
+function drawST(){
+  const L=sts();const f=S.filtre,fv=f.slice(2);
+  if(!L.length)return `<div class="empty">Aucun sous-traitant pour l'instant. Ajoute-les dans l'onglet Bureau, tableau Sous-traitants.</div>`;
+  const days=[0,1,2,3,4,5].map(k=>iso(addDays(S.weekStart,k)));
+  const rows=(f[0]==='t'&&isSTid(fv))?L.filter(t=>t.id===fv):L;
+  if(narrow()){let h='<div class="agenda">';
+    days.forEach((d,k)=>{const its=sortDay(S.I.filter(i=>inDay(i,d)&&rows.some(t=>assignedTo(i,t))));
+      h+=`<section class="agd ${d===S.today?'today':''}"><h3>${JOURS[k]} ${fmtD(parse(d))}${d===S.today?' <b class="st warn">Aujourd\'hui</b>':''}</h3>${its.length?its.map(i=>chip(i,d,{q:stNames(i)})).join(''):'<div class="none">Rien de prévu</div>'}</section>`;});
+    return h+'</div>';}
+  let h='<div class="scroll"><div class="wk"><div class="hd"><div class="d">Sous-traitant</div></div>';
+  days.forEach((d,k)=>{const dd=parse(d);h+=`<div class="hd ${d===S.today?'today':''}"><div class="d">${JOURS[k]}</div><div class="n">${dd.getDate()} <span>${MOIS[dd.getMonth()]}</span></div></div>`;});
+  rows.forEach(t=>{h+=`<div class="rn" style="--c:${ST_COL}"><i></i><div><b>${esc(t.nom)}</b>${t.poste?`<span>${esc(t.poste)}</span>`:''}</div></div>`;
+    h+=days.map(d=>{const its=sortDay(S.I.filter(i=>inDay(i,d)&&assignedTo(i,t)));
+      return `<div class="cell ${d===S.today?'today':''}">${its.map(i=>chip(i,d,{})).join('')}<button type="button" class="add" data-add-tech="${esc(t.id)}" data-add-day="${d}" aria-label="Ajouter une intervention le ${fmtIso(d)}">+</button></div>`;}).join('');});
+  return h+'</div></div>';
 }
 
 /* Mon planning */
@@ -891,7 +963,10 @@ function aFaire(){const me=myTech();if(!me)return [];const lim=iso(addDays(parse
   return mine().filter(i=>i.fin<S.today&&i.fin>=lim&&!myRap(i,me).length&&i.statut!=='Fait').sort((a,b)=>a.fin.localeCompare(b.fin));}
 function card(i){
   const c=chById(i.chantierId)||{};const me=myTech();
-  const others=(named(i).length?named(i).map(id=>teById(id)):techs().filter(t=>t.equipeId===i.equipeId)).filter(t=>!me||t.id!==me.id);
+  const others=(named(i).length?named(i).map(id=>teById(id)):techs().filter(t=>t.equipeId===i.equipeId)).filter(t=>(!me||t.id!==me.id)&&!isST(t));
+  const stIci=me&&!isST(me)?S.I.filter(x=>x.chantierId===i.chantierId&&hasST(x)&&x.debut<=i.fin&&x.fin>=i.debut):[];
+  const stTxt=stIci.map(x=>named(x).filter(isSTid).map(id=>{const t=teById(id);return t.nom+(t.poste?' ('+t.poste+')':'')+' · '+(x.debut===x.fin?fmtShort(x.debut):fmtShort(x.debut)+' au '+fmtShort(x.fin))+(t.tel?' · '+t.tel:'');}).join(', ')).join(' ; ');
+  const nDocs=S.docs.filter(d=>d.chantierId===i.chantierId).length;
   const n=diff(i.debut,i.fin)+1;const e=etat(i);
   const maps=c.adresse?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.adresse)}`:'';
   const mr=me?myRap(i,me):[];const h=mr.reduce((s,r)=>s+r.heures,0);
@@ -901,9 +976,9 @@ function card(i){
     <div class="row" style="justify-content:space-between;align-items:flex-start"><h3>${esc(c.nom||'')}</h3>${tag(i)}</div>
     <div class="when">${n>1?`du ${fmtIso(i.debut)} au ${fmtIso(i.fin)}`:fmtIso(i.debut)}${i.horaire?` · ${esc(i.horaire)}`:''}</div>
     ${i.travaux?`<div class="tr">${esc(i.travaux)}</div>`:''}
-    <div class="info">${c.adresse?`<div><span>Adresse :</span> ${esc(c.adresse)}</div>`:''}${c.contact?`<div><span>Contact :</span> ${esc(c.contact)}</div>`:''}${others.length?`<div><span>Avec :</span> ${esc(others.map(t=>t.nom+(t.tel?' ('+t.tel+')':'')).join(', '))}</div>`:''}${h?`<div><span>Mes heures ici :</span> <b>${fmtH(h)}</b> (${mr.length} rapport${mr.length>1?'s':''})</div>`:''}</div>
+    <div class="info">${c.adresse?`<div><span>Adresse :</span> ${esc(c.adresse)}</div>`:''}${c.contact?`<div><span>Contact :</span> ${esc(c.contact)}</div>`:''}${others.length?`<div><span>Avec :</span> ${esc(others.map(t=>t.nom+(t.tel?' ('+t.tel+')':'')).join(', '))}</div>`:''}${stTxt?`<div><span>Sous-traitant :</span> ${esc(stTxt)}</div>`:''}${h?`<div><span>Mes heures ici :</span> <b>${fmtH(h)}</b> (${mr.length} rapport${mr.length>1?'s':''})</div>`:''}</div>
     ${i.consignes?`<p class="cons">${esc(i.consignes)}</p>`:''}
-    <div class="acts">${canRap?`<button class="btn primary" type="button" ${dToday?`data-edit-rap="${esc(dToday.key)}"`:`data-new-rap="${esc(i.id)}"`}>${dToday?'Modifier mon rapport du jour':'Faire mon rapport'}</button>`:''}<button class="btn" type="button" data-inter="${esc(i.id)}">Détails${i.rapports.length?` (${i.rapports.length})`:''}</button>${maps?`<a class="btn" href="${esc(maps)}" target="_blank" rel="noopener">Itinéraire</a>`:''}</div>
+    <div class="acts">${canRap?`<button class="btn primary" type="button" ${dToday?`data-edit-rap="${esc(dToday.key)}"`:`data-new-rap="${esc(i.id)}"`}>${dToday?'Modifier mon rapport du jour':'Faire mon rapport'}</button>`:''}<button class="btn" type="button" data-inter="${esc(i.id)}">Détails${i.rapports.length?` (${i.rapports.length})`:''}</button>${maps?`<a class="btn" href="${esc(maps)}" target="_blank" rel="noopener">Itinéraire</a>`:''}${nDocs?`<button class="btn" type="button" data-chantier="${esc(i.chantierId)}">Documents (${nDocs})</button>`:''}</div>
   </article>`;
 }
 function drawMoi(){
@@ -916,7 +991,8 @@ function drawMoi(){
   const mineR=S.R.filter(r=>r.techId===t.id);
   const hw=mineR.filter(r=>r.date>=w0&&r.date<=w1).reduce((s,r)=>s+r.heures,0);
   const m0=S.today.slice(0,7);const hm=mineR.filter(r=>r.date.slice(0,7)===m0).reduce((s,r)=>s+r.heures,0);
-  let h=`<p class="hello">Bonjour ${esc(t.prenom||t.nom)}</p><p class="sub">${esc(eqName(t.equipeId))}${t.poste?' · '+esc(t.poste):''}</p>
+  let h=isST(t)?`<p class="hello">Bonjour ${esc(t.contact||t.nom)}</p><p class="sub">${esc(t.nom)}${t.poste?' · '+esc(t.poste):''}</p>`
+   :`<p class="hello">Bonjour ${esc(t.prenom||t.nom)}</p><p class="sub">${esc(eqName(t.equipeId))}${t.poste?' · '+esc(t.poste):''}</p>
    <div class="myh"><div><b>${fmtH(hw)}</b><span>mes heures cette semaine</span></div><div><b>${fmtH(hm)}</b><span>mes heures ce mois-ci</span></div></div>`;
   if(late.length)h+=`<div class="sec">Rapports à faire <b class="st warn">${late.length}</b></div><div class="cards">${late.map(card).join('')}</div>`;
   h+=`<div class="sec">Aujourd'hui · ${fmtIso(S.today)}</div>`+(today.length?`<div class="cards">${today.map(card).join('')}</div>`:'<div class="empty">Rien de prévu aujourd\'hui.</div>');
@@ -932,7 +1008,7 @@ function drawGantt(){
   let rows=S.ch.map(c=>({c,its:S.I.filter(i=>i.chantierId===c.id&&inR(i.debut,i.fin)&&passFiltre(i))}))
     .filter(r=>r.its.length||(!S.filtre&&r.c.statut!=='Terminé'&&inR(r.c.debut,r.c.fin)));
   rows.sort((a,b)=>(ST_ORD[a.c.statut]??1)-(ST_ORD[b.c.statut]??1)||(a.c.debut||'').localeCompare(b.c.debut||''));
-  const legend=`<div class="legend">${S.eq.map(e=>`<span style="--c:${col(e.couleur)}"><i></i>${esc(e.nom)}</span>`).join('')}<span><i class="band"></i>Période prévue</span><span><b class="st warn">contour orange</b> à pointer</span></div>`;
+  const legend=`<div class="legend">${S.eq.map(e=>`<span style="--c:${col(e.couleur)}"><i></i>${esc(e.nom)}</span>`).join('')}${S.I.some(hasST)?`<span style="--c:${ST_COL}"><i></i>Sous-traitants</span>`:''}<span><i class="band"></i>Période prévue</span><span><b class="st warn">contour orange</b> à pointer</span></div>`;
   if(!rows.length)return legend+'<div class="empty">Rien de planifié sur ces 6 semaines.</div>';
   let head='<div class="gt-row gt-head"><div class="gt-name">Chantier</div><div class="gt-track">';
   for(let w=0;w<6;w++){const d=addDays(start,w*7);head+=`<div class="gt-wk" style="left:calc(${w*7} * var(--cw))">S${isoWeek(d)} · ${fmtD(d)}</div>`;}
@@ -945,7 +1021,7 @@ function drawGantt(){
     const lanes=[],lane=new Map();r.its.slice().sort((a,b)=>a.debut.localeCompare(b.debut)).forEach(i=>{let k=lanes.findIndex(end=>end<i.debut);if(k<0){k=lanes.length;lanes.push(i.fin);}else lanes[k]=i.fin;lane.set(i.id,k);});
     const hgt=Math.max(64,Math.max(1,lanes.length)*26+14);let tr='';
     if(inR(c.debut,c.fin)){const a=cl(diff(sI,c.debut)),b=cl(diff(sI,c.fin));tr+=`<div class="gt-band" style="left:calc(${a} * var(--cw) + 1px);width:calc(${b-a+1} * var(--cw) - 3px)"></div>`;}
-    r.its.forEach(i=>{const a=cl(diff(sI,i.debut)),b=cl(diff(sI,i.fin));const e=etat(i);const lbl=(e==='fait'?'✓ ':'')+(i.travaux||eqName(teamOf(i)));
+    r.its.forEach(i=>{const a=cl(diff(sI,i.debut)),b=cl(diff(sI,i.fin));const e=etat(i);const lbl=(e==='fait'?'✓ ':'')+(stOnly(i)?stNames(i)+' · ':'')+(i.travaux||eqName(teamOf(i)));
       tr+=`<button type="button" class="gt-bar ${e==='fait'?'done':''} ${e==='apointer'?'late':''} ${e==='probleme'?'bad':''}" data-inter="${esc(i.id)}" title="${esc(eqName(teamOf(i))+' : '+(i.travaux||''))}" style="--c:${colorOf(i)};top:${7+lane.get(i.id)*26}px;left:calc(${a} * var(--cw) + 2px);width:calc(${b-a+1} * var(--cw) - 4px)">${esc(lbl)}</button>`;});
     body+=`<div class="gt-row" style="min-height:${hgt}px"><div class="gt-name"><button type="button" class="linkish" data-chantier="${esc(c.id)}" style="color:var(--ink);font-weight:700;font-size:13.5px;line-height:1.25">${esc(c.nom)}</button><span>${esc([c.client,c.adresse].filter(Boolean).join(' · '))}</span>${all.length?`<span>${done}/${all.length} faites</span><div class="pg"><u style="width:${Math.round(done/all.length*100)}%"></u></div>`:''}</div><div class="gt-track">${tr}</div></div>`;});
   return legend+`<div class="scroll"><div class="gt" style="--n:${NJ}">${head}<div style="position:relative">${over}${body}</div></div></div>`;
@@ -974,14 +1050,15 @@ function drawBureau(){
    <section class="box"><div class="box-h"><h2>Équipes</h2><button class="btn" type="button" data-new-eq>+ Équipe</button></div><div class="tblw"><table class="tbl"><thead><tr><th>Équipe</th><th>Code</th><th>Chef</th><th>Effectif</th></tr></thead><tbody>${eqRows}</tbody></table></div></section>
    <section class="box"><div class="box-h"><h2>Chantiers</h2><button class="btn" type="button" data-new-ch>+ Chantier</button></div><div class="tblw"><table class="tbl"><thead><tr><th>Chantier</th><th>Lieu</th><th>Période</th><th>Statut</th><th>Faites</th></tr></thead><tbody>${chRows}</tbody></table></div></section>
    <section class="box wide"><div class="box-h"><h2>Techniciens</h2><button class="btn" type="button" data-new-tech>+ Technicien</button></div><div class="tblw"><table class="tbl"><thead><tr><th>Technicien</th><th>Équipe</th><th>Poste</th><th>Téléphone</th><th>Habilitations</th><th>Connexion</th></tr></thead><tbody>${teRows}</tbody></table></div></section>
+   ${stSection()}
    <section class="box wide"><div class="box-h"><h2>Accès bureau</h2><button class="btn" type="button" data-new-acces>+ Accès bureau</button></div><div class="tblw"><table class="tbl"><thead><tr><th>Nom</th><th>Adresse mail</th></tr></thead><tbody>${accRows()}</tbody></table></div></section>
    <section class="box wide" id="atlas-notif"></section>
   </div>
-  <div class="help"><h3>Donner l'accès aux techniciens</h3><ol>
-   <li>Ajoute l'adresse mail de chaque technicien sur sa fiche (tableau Techniciens ci-dessus).</li>
+  <div class="help"><h3>Donner l'accès aux techniciens et aux sous-traitants</h3><ol>
+   <li>Mets leur numéro de téléphone sur leur fiche (tableau Techniciens ou Sous-traitants ci-dessus).</li>
    <li>Envoie-leur le lien de l'application (SMS ou WhatsApp) et fais-leur installer l'appli : sur Android, bouton « Installer l'appli » ; sur iPhone, dans Safari, Partager puis « Sur l'écran d'accueil ».</li>
-   <li>Dans l'appli, ils tapent leur adresse mail et le code à 6 chiffres reçu, puis touchent « Activer les notifications ». Leur téléphone reste relié à leur compte.</li>
-  </ol><p class="muted" style="margin:8px 0 0">Les techniciens peuvent uniquement voir le planning et faire leurs rapports. Pour retirer un accès, efface l'adresse mail de la fiche ou la ligne dans Accès bureau : l'appareil est déconnecté à la synchronisation suivante.</p></div>`;
+   <li>Dans l'appli, ils tapent leur numéro. Un encadré « veut se connecter » apparaît chez toi : clique sur Autoriser. Leur téléphone reste ensuite relié à leur compte.</li>
+  </ol><p class="muted" style="margin:8px 0 0">Les salariés voient le planning et font leurs rapports avec leurs heures. Les sous-traitants voient seulement leurs interventions et les documents que tu leur partages, sans heures. Pour changer de téléphone, clique sur « Libérer » dans la colonne Connexion.</p></div>`;
 }
 
 /* ---------- Détail, rapports, fiche chantier ---------- */
@@ -989,18 +1066,20 @@ function openDrawer(id){
   const i=S.I.find(x=>x.id===id);if(!i)return;
   const c=chById(i.chantierId)||{};const n=diff(i.debut,i.fin)+1;
   const maps=c.adresse?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.adresse)}`:'';
-  const team=named(i).length?named(i).map(id=>teById(id)):techs().filter(t=>t.equipeId===i.equipeId);
+  const team=named(i).length?named(i).map(id=>teById(id)).filter(t=>!isST(t)):techs().filter(t=>t.equipeId===i.equipeId);
+  const stL=named(i).map(id=>teById(id)).filter(isST);
   const me=myTech();const canAdd=S.db&&S.canWrite!==false&&(S.owner||me);
   const rs=i.rapports.slice().reverse();
   showDrawer(colorOf(i),c.nom||'',`${esc(c.client||'')}${c.statut?' · '+esc(c.statut):''}`,`
     <dl class="kv"><dt>Travaux</dt><dd><b>${esc(i.travaux||'Non précisé')}</b></dd>
      <dt>Équipe</dt><dd>${esc(eqName(teamOf(i))||'Aucune')}</dd>
-     <dt>Techniciens</dt><dd>${team.length?team.map(t=>esc(t.nom)+(t.tel?` <span class="muted">${esc(t.tel)}</span>`:'')).join('<br>'):'Non précisé'}${named(i).length?'':(i.equipeId?'<div class="muted">Toute l\'équipe</div>':'')}</dd>
+     ${team.length||!stL.length?`<dt>Techniciens</dt><dd>${team.length?team.map(t=>esc(t.nom)+(t.tel?` <span class="muted">${esc(t.tel)}</span>`:'')).join('<br>'):'Non précisé'}${named(i).length?'':(i.equipeId?'<div class="muted">Toute l\'équipe</div>':'')}</dd>`:''}
+     ${stL.length?`<dt>Sous-traitant</dt><dd>${stL.map(t=>`<b>${esc(t.nom)}</b>${t.poste?` <span class="muted">${esc(t.poste)}</span>`:''}${t.contact||t.tel?`<div class="muted">${esc([t.contact,t.tel].filter(Boolean).join(' · '))}</div>`:''}`).join('<br>')}${S.owner&&i.visibleSal===false?'<div class="muted">Masqué pour les salariés</div>':''}</dd>`:''}
      <dt>Dates</dt><dd>${n>1?`du ${fmtIso(i.debut)} au ${fmtIso(i.fin)} (${n} jours)`:fmtIso(i.debut)}</dd>
      ${i.horaire?`<dt>Horaire</dt><dd>${esc(i.horaire)}</dd>`:''}
      ${c.adresse?`<dt>Adresse</dt><dd>${esc(c.adresse)}<br><a href="${esc(maps)}" target="_blank" rel="noopener">Ouvrir dans Google Maps</a></dd>`:''}
      ${c.contact?`<dt>Contact</dt><dd>${esc(c.contact)}</dd>`:''}
-     <dt>Chantier</dt><dd><button type="button" class="linkish" data-chantier="${esc(i.chantierId)}">Voir le fil et les heures du chantier</button></dd></dl>
+     <dt>Chantier</dt><dd><button type="button" class="linkish" data-chantier="${esc(i.chantierId)}">${meST()?'Voir le chantier et ses documents':'Voir le fil, les heures et les documents du chantier'}</button></dd></dl>
     ${i.consignes?`<p class="notes">${esc(i.consignes)}</p>`:''}
     <section class="pt"><div class="row" style="justify-content:space-between;align-items:center"><h3>Rapports</h3>${i.heures?`<span class="hrs">${fmtH(i.heures)} au total</span>`:''}</div>
      ${canAdd?`<button class="btn primary" type="button" data-new-rap="${esc(i.id)}">${S.owner?'+ Ajouter un rapport':'+ Faire mon rapport'}</button>`:''}
@@ -1026,16 +1105,42 @@ function openChantier(cid){
   const lines=Object.keys(parTech).sort((a,b)=>parTech[b]-parTech[a]).map(id=>{const t=teById(id);return `<tr><td><span class="dot" style="--c:${t?eqColor(t.equipeId):GREY}"></span>${esc(t?t.nom:'Technicien supprimé')}</td><td class="num hrs">${fmtH(parTech[id])}</td></tr>`;}).join('');
   const next=its.filter(i=>i.fin>=S.today).sort((a,b)=>a.debut.localeCompare(b.debut)).slice(0,6);
   const travauxOf=r=>(S.I.find(i=>i.id===r.interventionId)||{}).travaux||'';
+  const docs=S.docs.filter(d=>d.chantierId===cid).sort((a,b)=>String(b.le).localeCompare(String(a.le)));
+  const canDoc=!!(S.db&&window.__atlasDoc&&(S.owner||myTech()));const stv=meST();
+  const docSec=`<section class="pt"><div class="row" style="justify-content:space-between;align-items:center"><h3>Documents</h3>${canDoc?`<button class="btn" type="button" data-doc-add="${esc(cid)}">+ Ajouter un document</button>`:''}</div>
+    ${docs.length?`<div class="docs">${docs.map(docHtml).join('')}</div>`:'<div class="muted">Aucun document pour l\'instant (attestation d\'entretien, quitus de levée de réserves, PV…).</div>'}</section>`;
   showDrawer(GREY,c.nom,`${esc(c.client||'')}${c.statut?' · '+esc(c.statut):''}`,`
-    <div class="stats"><div><b>${fmtH(tot)}</b><span>heures passées</span></div><div><b>${done}/${its.length}</b><span>interventions faites</span></div><div><b>${nbPh}</b><span>photos</span></div></div>
+    ${stv?'':`<div class="stats"><div><b>${fmtH(tot)}</b><span>heures passées</span></div><div><b>${done}/${its.length}</b><span>interventions faites</span></div><div><b>${nbPh}</b><span>photos</span></div></div>`}
     <dl class="kv">${c.adresse?`<dt>Adresse</dt><dd>${esc(c.adresse)}<br><a href="${esc(maps)}" target="_blank" rel="noopener">Ouvrir dans Google Maps</a></dd>`:''}
      ${c.contact?`<dt>Contact</dt><dd>${esc(c.contact)}</dd>`:''}${c.debut||c.fin?`<dt>Période</dt><dd>${c.debut?fmtIso(c.debut):'?'} au ${c.fin?fmtIso(c.fin):'?'}</dd>`:''}${c.remarques?`<dt>Remarques</dt><dd>${esc(c.remarques)}</dd>`:''}</dl>
     ${S.owner?`<div class="row"><button class="btn" type="button" data-edit-ch="${esc(c.id)}">Modifier le chantier</button></div>`:''}
-    ${lines?`<section class="pt"><h3>Heures par technicien</h3><table class="tbl"><tbody>${lines}</tbody></table></section>`:''}
+    ${docSec}
+    ${lines&&!stv?`<section class="pt"><h3>Heures par technicien</h3><table class="tbl"><tbody>${lines}</tbody></table></section>`:''}
     ${next.length?`<section class="pt"><h3>Prochaines interventions</h3>${next.map(i=>`<button type="button" class="chip" data-inter="${esc(i.id)}" style="--c:${colorOf(i)}"><span class="t">${esc(i.travaux||'Intervention')}</span><span class="m"><span>${i.debut===i.fin?fmtIso(i.debut):fmtIso(i.debut)+' au '+fmtIso(i.fin)}</span>${tag(i)}</span><span class="s" style="color:var(--muted)">${esc(who(i))}</span></button>`).join('')}</section>`:''}
     <section class="pt"><h3>Fil du chantier</h3>${rs.length?`<div class="rps">${rs.slice().reverse().map(r=>rapHtml(r,{travaux:travauxOf(r)})).join('')}</div>`:'<div class="muted">Pas encore de rapport sur ce chantier.</div>'}</section>`);
 }
 
+function docHtml(d){const pdf=d.mime==='application/pdf';const dt=d.le?new Date(d.le):null;const can=S.owner||d.par===S.uid;
+  return `<div class="doc"><span class="ic ${pdf?'pdf':'img'}" aria-hidden="true">${pdf?'PDF':'IMG'}</span><div class="dx"><b>${esc(d.titre||d.type||'Document')}</b><div class="muted">${esc(d.type||'')}${dt&&!isNaN(dt)?' · '+dt.toLocaleDateString('fr-FR'):''}${d.parNom?' · '+esc(d.parNom):''}${S.owner&&d.visibleST?' · visible par le sous-traitant':''}</div></div><button class="btn" type="button" data-doc-open="${esc(d.id)}">Ouvrir</button>${can?`<button class="btn danger" type="button" data-doc-del="${esc(d.id)}" aria-label="Supprimer le document">×</button>`:''}</div>`;}
+function docForm(cid){
+  const c=chById(cid);if(!c||!window.__atlasDoc)return;let file=null;const me=myTech();
+  modal('Ajouter un document',`
+   <p style="margin:0"><b>${esc(c.nom)}</b></p>
+   <label class="fld" for="dc-t">Type de document<select id="dc-t" name="type">${optsTxt(DOC_TYPES,DOC_TYPES[0])}</select></label>
+   <label class="fld" for="dc-n">Titre (facultatif)<input type="text" id="dc-n" name="titre" maxlength="120" placeholder="Ex. Attestation d'entretien chaudière 2026"></label>
+   <div class="fld">Fichier : PDF ou photo, 10 Mo au plus<label class="btn" for="dc-f" style="justify-self:start">Choisir un fichier ou prendre une photo</label><input type="file" id="dc-f" accept="application/pdf,image/*" hidden><span class="muted" id="dc-fn" translate="no"></span></div>
+   ${S.owner?`<label for="dc-st" style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="dc-st" name="visibleST"> Visible par les sous-traitants de ce chantier</label>`:''}`,
+  async f=>{if(!file)return 'Choisis un fichier.';const type=v(f,'type');const titre=(v(f,'titre')||type).slice(0,120);
+    let r;toast('Envoi du document…',true);
+    try{r=await window.__atlasDoc.upload(file);}catch(e){hideToast();const m=e&&e.message;return m==='too_large'?'Le fichier dépasse 10 Mo.':m==='unsupported_type'?'Format non accepté : PDF, JPG ou PNG. Pour un fichier Word, enregistre-le d\'abord en PDF.':'Envoi impossible pour le moment. Réessaie.';}
+    hideToast();
+    const o={chantierId:cid,type,titre,fichier:r.id,nom:r.nom,mime:r.mime,taille:r.taille,le:new Date().toISOString(),par:S.uid||'',parNom:S.owner?'Bureau':(me?me.nom:''),
+      visibleST:S.owner?!!(f.elements.visibleST&&f.elements.visibleST.checked):isST(me)};
+    const ok=await write(coll('documents').doc(),o,'doc');
+    if(ok)toast('Document ajouté.');else window.__atlasDoc.remove(r.id);
+    return ok?true:undefined;},
+  {submit:'Ajouter',onReady:f=>{const inp=f.querySelector('#dc-f');inp.addEventListener('change',()=>{file=(inp.files&&inp.files[0])||null;f.querySelector('#dc-fn').textContent=file?file.name:'';});}});
+}
 async function compress(file){
   const url=URL.createObjectURL(file);
   try{
@@ -1058,18 +1163,19 @@ function rapportForm(i,r){
   const kept=r?r.photos.slice():[];const removed=[];let files=[];
   const locked=r&&!S.owner&&isValid(r.techId,r.date);
   if(locked){toast('Cette semaine a été validée par le bureau. Demande-lui de faire la correction.');return;}
-  const tOpts=S.owner?`<label class="fld" for="r-t">Technicien<select id="r-t" name="techId">${optsId(techs(),tId,'Choisir')}</select></label>`:`<p class="muted" style="margin:0">Rapport de <b>${esc(me.nom)}</b></p>`;
+  const stR=isST(me)||(S.owner&&stOnly(i));
+  const tOpts=S.owner?`<label class="fld" for="r-t">${stR?'Sous-traitant':'Technicien'}<select id="r-t" name="techId">${optsId(stR?sts():techs(),tId,'Choisir')}</select></label>`:`<p class="muted" style="margin:0">Rapport de <b>${esc(me.nom)}</b></p>`;
   modal(r?'Modifier le rapport':'Rapport du jour',`
    <p style="margin:0"><b>${esc(chName(i))}</b>${i.travaux?' · '+esc(i.travaux):''}</p>
    ${tOpts}
    <div class="two"><label class="fld" for="r-d">Jour<input type="date" id="r-d" name="date" value="${esc(d0)}"></label>
-   <label class="fld" for="r-h">Heures travaillées<input type="number" id="r-h" name="heures" min="0" max="24" step="0.25" inputmode="decimal" value="${r?esc(r.heures):''}" placeholder="Ex. 7,5"></label></div>
+   ${stR?'':`<label class="fld" for="r-h">Heures travaillées<input type="number" id="r-h" name="heures" min="0" max="24" step="0.25" inputmode="decimal" value="${r?esc(r.heures):''}" placeholder="Ex. 7,5"></label>`}</div>
    <div class="fld">Où en est l'intervention ?<div class="choice" role="group" aria-label="Statut">${ST_RAP.map(s=>`<button type="button" data-st="${esc(s)}" aria-pressed="${s===st}">${esc(ST_RAP_LBL[s])}</button>`).join('')}</div></div>
    <label class="fld" for="r-o">Observations (travaux faits, réserves, matériel manquant…)<textarea id="r-o" name="observation" maxlength="2000">${esc(r?r.observation:'')}</textarea></label>
    <div class="fld">Photos<div id="r-ph"></div>
     ${S.assets?`<label class="btn" for="r-f" style="justify-self:start">+ Ajouter des photos</label><input type="file" id="r-f" accept="image/*" multiple hidden>`:'<span class="muted">L\'ajout de photos n\'est pas disponible avec ton accès.</span>'}</div>`,
   async f=>{
-    const techId=S.owner?v(f,'techId'):me.id;const date=v(f,'date');const hs=String(f.elements.heures.value||'').replace(',','.');const heures=hs===''?0:Number(hs);
+    const techId=S.owner?v(f,'techId'):me.id;const date=v(f,'date');const hs=String((f.elements.heures&&f.elements.heures.value)||'').replace(',','.');const heures=hs===''?0:Number(hs);
     if(!techId)return 'Choisis le technicien.';if(!isIso(date))return 'Indique le jour.';
     if(!(heures>=0&&heures<=24))return 'Indique un nombre d\'heures entre 0 et 24.';
     if(!S.owner&&isValid(techId,date))return 'Cette semaine a déjà été validée par le bureau.';
@@ -1113,7 +1219,7 @@ function drawHeures(){
   if(!S.owner)return '<div class="empty">Réservé au bureau.</div>';
   const days=[0,1,2,3,4,5,6].map(k=>iso(addDays(S.weekStart,k)));const wk=iso(S.weekStart);
   const f=S.filtre,fv=f.slice(2);let ts=techs();if(f[0]==='e')ts=ts.filter(t=>t.equipeId===fv);if(f[0]==='t')ts=ts.filter(t=>t.id===fv);
-  const W=weekRaps();
+  const W=weekRaps().filter(r=>!isSTid(r.techId));
   const sum=(arr)=>arr.reduce((s,r)=>s+r.heures,0);
   const dayTot=days.map(()=>0);let grand=0;
   const rows=ts.map(t=>{const rt=W.filter(r=>r.techId===t.id);const tot=sum(rt);grand+=tot;const val=S.val[t.id+'_'+wk];
@@ -1139,6 +1245,7 @@ async function exportCsv(kind){
   let rs,name;
   if(kind==='mois'){const m0=iso(S.weekStart).slice(0,7);rs=S.R.filter(r=>r.date.slice(0,7)===m0);name=`heures_${m0}.csv`;}
   else{rs=weekRaps();name=`heures_semaine_${isoWeek(S.weekStart)}_${iso(S.weekStart)}.csv`;}
+  rs=rs.filter(r=>!isSTid(r.techId));
   const f=S.filtre,fv=f.slice(2);if(f[0]==='e')rs=rs.filter(r=>{const t=teById(r.techId);return t&&t.equipeId===fv;});if(f[0]==='t')rs=rs.filter(r=>r.techId===fv);
   if(!rs.length){toast('Aucune heure sur cette période.');return;}
   const q=x=>{const s=String(x==null?'':x);return /[;"\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
@@ -1169,25 +1276,29 @@ function interForm(i,preset){
   preset=preset||{};const d0=preset.date||iso(S.weekStart);
   const x=i||{chantierId:'',equipeId:preset.equipeId||'',techIds:preset.techId?[preset.techId]:[],debut:d0,fin:d0,horaire:'',travaux:'',consignes:''};
   const chs=S.ch.filter(c=>c.statut!=='Terminé'||c.id===x.chantierId);
+  const sl=sts().map(t=>`<label for="tk-${esc(t.id)}" style="--c:${ST_COL}"><input type="checkbox" id="tk-${esc(t.id)}" name="tk" value="${esc(t.id)}" ${x.techIds.indexOf(t.id)>=0?'checked':''}>${esc(t.nom)}</label>`).join('');
   const tl=techs().map(t=>`<label for="tk-${esc(t.id)}" style="--c:${eqColor(t.equipeId)}"><input type="checkbox" id="tk-${esc(t.id)}" name="tk" value="${esc(t.id)}" ${x.techIds.indexOf(t.id)>=0?'checked':''}>${esc(t.nom)}</label>`).join('');
   modal(i?'Modifier l\'intervention':'Nouvelle intervention',`
    <label class="fld" for="f-ch">Chantier<select id="f-ch" name="chantierId">${optsId(chs,x.chantierId,'Choisir un chantier')}</select></label>
    <label class="fld" for="f-eq">Équipe<select id="f-eq" name="equipeId">${optsId(S.eq,x.equipeId,'Aucune')}</select></label>
    <div class="fld">Techniciens (ne coche personne pour envoyer toute l'équipe)<div class="tchk">${tl||'<span class="muted">Aucun technicien enregistré.</span>'}</div></div>
+   ${sl?`<div class="fld">Sous-traitant<div class="tchk">${sl}</div></div>
+   <label for="f-vs" id="f-vsl" style="display:${x.techIds.some(isSTid)?'flex':'none'};gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="f-vs" name="visibleSal" ${x.visibleSal===false?'':'checked'}> Mes salariés voient ce sous-traitant sur le chantier</label>`:''}
    <div class="two"><label class="fld" for="f-d1">Du<input type="date" id="f-d1" name="debut" value="${esc(x.debut)}"></label><label class="fld" for="f-d2">Au (inclus)<input type="date" id="f-d2" name="fin" value="${esc(x.fin)}"></label></div>
    <label class="fld" for="f-tr">Travaux<input type="text" id="f-tr" name="travaux" maxlength="200" value="${esc(x.travaux)}" placeholder="Ex. pose chaudière, mise en service PAC"></label>
    <label class="fld" for="f-h">Horaire / RDV<input type="text" id="f-h" name="horaire" maxlength="60" value="${esc(x.horaire)}" placeholder="Ex. 7h30 sur site"></label>
    <label class="fld" for="f-c">Consignes pour l'équipe<textarea id="f-c" name="consignes" maxlength="2000" placeholder="Matériel à prendre, accès, clés, contact…">${esc(x.consignes)}</textarea></label>
    <label for="f-nt" style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="f-nt" name="notif" checked> Prévenir les techniciens concernés (notification sur leur téléphone)</label>`,
   async f=>{const techIds=[].slice.call(f.querySelectorAll('input[name="tk"]:checked')).map(c=>c.value);
-    const o={chantierId:v(f,'chantierId'),equipeId:v(f,'equipeId'),techIds,debut:v(f,'debut'),fin:v(f,'fin'),horaire:v(f,'horaire'),travaux:v(f,'travaux'),consignes:v(f,'consignes')};
+    const o={chantierId:v(f,'chantierId'),equipeId:v(f,'equipeId'),techIds,debut:v(f,'debut'),fin:v(f,'fin'),horaire:v(f,'horaire'),travaux:v(f,'travaux'),consignes:v(f,'consignes'),visibleSal:!f.elements.visibleSal||f.elements.visibleSal.checked};
     if(!o.chantierId)return 'Choisis un chantier.';if(!isIso(o.debut)||!isIso(o.fin))return 'Renseigne les deux dates.';if(o.fin<o.debut)return 'La date de fin doit être après la date de début.';
-    if(!o.equipeId&&!techIds.length)return 'Choisis une équipe ou au moins un technicien.';
+    if(!o.equipeId&&!techIds.length)return 'Choisis une équipe, un technicien ou un sous-traitant.';
     if(i&&i.exemple)o.exemple=true;
     window.__atlasNotif=!!(f.elements.notif&&f.elements.notif.checked);
     const ref=i?coll('interventions').doc(i.id):coll('interventions').doc();
     const ok=await write(ref,o,'plan');if(ok)toast(i?'Intervention modifiée.':'Intervention ajoutée.');return ok?true:undefined;},
   {onReady:f=>{f.elements.debut.addEventListener('change',()=>{if(f.elements.fin.value<f.elements.debut.value)f.elements.fin.value=f.elements.debut.value;});
+    const vsl=f.querySelector('#f-vsl');f.querySelectorAll('input[name="tk"]').forEach(c=>c.addEventListener('change',()=>{if(vsl)vsl.style.display=[].slice.call(f.querySelectorAll('input[name="tk"]:checked')).some(x=>isSTid(x.value))?'flex':'none';}));
     f.querySelectorAll('input[name="tk"]').forEach(c=>c.addEventListener('change',()=>{if(c.checked&&!f.elements.equipeId.value){const t=teById(c.value);if(t&&eqById(t.equipeId))f.elements.equipeId.value=t.equipeId;}}));}});
 }
 function equipeForm(e){
@@ -1226,6 +1337,28 @@ function techForm(t){
     const b=f.querySelector('#delT');if(b)b.onclick=()=>confirmBox('Supprimer le technicien',`Supprimer <b>${esc(t.nom)}</b> ? Il est retiré des interventions où il était nommé.`,'Supprimer',async()=>{
       for(const i of S.it.filter(i=>Array.isArray(i.techIds)&&i.techIds.indexOf(t.id)>=0)){const o=Object.assign({},i);delete o.id;o.techIds=i.techIds.filter(x=>x!==t.id);if(!o.techIds.length&&!o.equipeId)o.equipeId=t.equipeId||'';await write(coll('interventions').doc(i.id),o,'plan');}
       for(const id of us)await write(S.db.doc('liens/'+id),{techId:'',le:new Date().toISOString()},'plan');
+      await write(coll('techniciens').doc(t.id),null,'plan');});}});
+}
+function stSection(){
+  const rows=sts().map(t=>`<tr class="click" data-edit-st="${esc(t.id)}"><td><span class="dot" style="--c:${ST_COL}"></span><b>${esc(t.nom)}</b>${t.contact?`<div class="muted">${esc(t.contact)}</div>`:''}</td><td>${esc(t.poste)}</td><td class="num">${esc(t.tel)}</td><td><div class="muted">${typeof telCell==='function'?telCell(t):''}</div></td></tr>`).join('')||'<tr><td colspan="4" class="muted">Aucun sous-traitant.</td></tr>';
+  return `<section class="box wide"><div class="box-h"><h2>Sous-traitants</h2><button class="btn" type="button" data-new-st>+ Sous-traitant</button></div><div class="tblw"><table class="tbl"><thead><tr><th>Entreprise</th><th>Métier / lot</th><th>Téléphone</th><th>Connexion</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;}
+function stForm(t){
+  const x=t||{nom:'',contact:'',poste:'',tel:'',mail:'',remarques:''};
+  modal(t?'Modifier le sous-traitant':'Nouveau sous-traitant',`
+   <label class="fld" for="s-n">Entreprise<input type="text" id="s-n" name="nom" maxlength="60" value="${esc(x.nom)}" placeholder="Ex. Élec Moselle"></label>
+   <div class="two"><label class="fld" for="s-po">Métier / lot<input type="text" id="s-po" name="poste" maxlength="80" value="${esc(x.poste||'')}" placeholder="Ex. Électricité, plâtrerie"></label><label class="fld" for="s-c">Responsable<input type="text" id="s-c" name="contact" maxlength="80" value="${esc(x.contact||'')}" placeholder="Nom du patron ou du chef d'équipe"></label></div>
+   <div class="two"><label class="fld" for="s-t">Téléphone (sert à se connecter à l'appli)<input type="tel" id="s-t" name="tel" maxlength="30" value="${esc(x.tel||'')}"></label><label class="fld" for="s-m">Adresse mail (facultatif)<input type="email" id="s-m" name="mail" maxlength="120" value="${esc(x.mail||'')}" autocomplete="off" autocapitalize="off" spellcheck="false"></label></div>
+   <label class="fld" for="s-r">Remarques<input type="text" id="s-r" name="remarques" maxlength="500" value="${esc(x.remarques||'')}" placeholder="Assurance décennale, SIRET, conditions…"></label>
+   <p class="muted" style="margin:0">Le sous-traitant voit seulement ses interventions et les documents que tu lui partages. Il n'a pas d'heures à saisir : il indique si le travail est terminé, avec photos et remarques.</p>`,
+  async f=>{const o={type:'st',nom:v(f,'nom'),poste:v(f,'poste'),contact:v(f,'contact'),tel:v(f,'tel'),mail:v(f,'mail').toLowerCase(),remarques:v(f,'remarques'),equipeId:'',prenom:'',nomFamille:'',habil:'',vehicule:'',ordre:t?(t.ordre||0):Date.now()};
+    if(!o.nom)return 'Indique le nom de l\'entreprise.';if(S.te.some(y=>y.nom===o.nom&&(!t||y.id!==t.id)))return 'Ce nom est déjà utilisé.';
+    if(o.mail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.mail))return 'Adresse mail invalide.';
+    if(o.mail&&typeof mailPris==='function'&&mailPris(o.mail,t?t.id:''))return 'Cette adresse mail est déjà utilisée.';
+    if(o.tel&&typeof telPris==='function'&&telPris(o.tel,t?t.id:''))return 'Ce numéro est déjà sur une autre fiche.';
+    return (await write(t?coll('techniciens').doc(t.id):coll('techniciens').doc(),o,'plan'))?true:undefined;},
+  {extra:t?'<button type="button" class="btn danger" id="delS">Supprimer</button>':'',onReady:f=>{const b=f.querySelector('#delS');if(b)b.onclick=()=>confirmBox('Supprimer le sous-traitant',`Supprimer <b>${esc(t.nom)}</b> ? Il est retiré des interventions où il était prévu.`,'Supprimer',async()=>{
+      for(const i of S.it.filter(i=>Array.isArray(i.techIds)&&i.techIds.indexOf(t.id)>=0)){const o=Object.assign({},i);delete o.id;o.techIds=i.techIds.filter(x=>x!==t.id);
+        await write(coll('interventions').doc(i.id),(!o.techIds.length&&!o.equipeId)?null:o,'plan');}
       await write(coll('techniciens').doc(t.id),null,'plan');});}});
 }
 function chantierForm(c){
@@ -1309,7 +1442,7 @@ async function pickMe(id){
 
 /* ---------- Événements ---------- */
 document.addEventListener('click',ev=>{
-  const t=ev.target.closest('[data-close],[data-view],[data-inter],[data-photo],[data-chantier],[data-new-rap],[data-edit-rap],[data-moi],[data-add-day],[data-edit-eq],[data-edit-tech],[data-edit-ch],[data-new-eq],[data-new-ch],[data-new-tech],[data-edit-inter],[data-del-inter],[data-mode],[data-hcell],[data-val],[data-unval],[data-export],#delEx');
+  const t=ev.target.closest('[data-close],[data-view],[data-inter],[data-photo],[data-chantier],[data-new-rap],[data-edit-rap],[data-moi],[data-add-day],[data-edit-eq],[data-edit-tech],[data-edit-ch],[data-new-eq],[data-new-ch],[data-new-tech],[data-edit-inter],[data-del-inter],[data-mode],[data-hcell],[data-val],[data-unval],[data-export],#delEx,[data-new-st],[data-edit-st],[data-doc-open],[data-doc-del],[data-doc-add]');
   if(!t)return;
   if(t.hasAttribute('data-close')){if(t.closest('#modal'))closeModal();else closeDrawer();return;}
   if(t.dataset.view){S.view=t.dataset.view;closeDrawer();render();window.scrollTo(0,0);return;}
@@ -1321,7 +1454,13 @@ document.addEventListener('click',ev=>{
   if(t.dataset.editRap){const r=findRap(t.dataset.editRap);if(!r)return;const i=S.I.find(x=>x.id===r.interventionId);closeDrawer();
     if(!i){toast('L\'intervention de ce rapport a été supprimée.');return;}rapportForm(i,r);return;}
   if(t.dataset.moi){pickMe(t.dataset.moi);return;}
+  if(t.dataset.docAdd){closeDrawer();docForm(t.dataset.docAdd);return;}
+  if(t.dataset.docOpen){const d=S.docs.find(x=>x.id===t.dataset.docOpen);if(d&&window.__atlasDoc)window.__atlasDoc.ouvrir(d.fichier,d.nom,d.mime);return;}
+  if(t.dataset.docDel){const d=S.docs.find(x=>x.id===t.dataset.docDel);if(!d)return;const cid=d.chantierId;closeDrawer();
+    confirmBox('Supprimer le document',`Supprimer « ${esc(d.titre||d.type)} » ?`,'Supprimer',async()=>{if(await write(coll('documents').doc(d.id),null,'doc')){if(window.__atlasDoc)window.__atlasDoc.remove(d.fichier);toast('Document supprimé.');openChantier(cid);}});return;}
   if(!S.owner||!S.db)return;
+  if(t.hasAttribute('data-new-st')){stForm(null);return;}
+  if(t.dataset.editSt){stForm(teById(t.dataset.editSt));return;}
   if(t.id==='delEx'){deleteExamples();return;}
   if(t.dataset.addDay){interForm(null,{date:t.dataset.addDay,equipeId:t.dataset.addEq||'',techId:t.dataset.addTech||''});return;}
   if(t.dataset.editEq){equipeForm(eqById(t.dataset.editEq));return;}
@@ -1384,6 +1523,7 @@ async function start(){
   sub('appareils',a=>{S.app=a;});
   sub('demandes',a=>{S.dem=a;});
   sub('validations',a=>{const m={};a.forEach(x=>{if(x.valide)m[x.id]=true;});S.val=m;});
+  sub('documents',a=>{S.docs=a.filter(d=>str(d.fichier)&&str(d.chantierId));});
   syncRapports();
 }
 function syncRapports(){
