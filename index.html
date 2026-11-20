@@ -268,7 +268,7 @@ input[type="number"]{background:var(--surface);border:1px solid var(--line);bord
 :root{--paper:#f8f9f9;--surface:#ffffff;--ink:#12241a;--muted:#56675c;--line:#d3dbd1;
   --accent:#1e7a33;--accent-ink:#ffffff;--ok:#1e7a33;--warn:#b86e0c;--bad:#c53b33;--today:rgba(246,181,44,.16);
   --f-display:"Gabarito",ui-sans-serif,system-ui,sans-serif;--f-body:"Figtree",ui-sans-serif,system-ui,sans-serif;color-scheme:light}
-.mark{background:#fff url(https://atlas-energie.github.io/planning-atlas-energie/logo.png?v=2) center/84% no-repeat!important;width:48px!important;height:48px!important;border-radius:12px!important;flex:none;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.mark{background:#fff url(https://atlas-energie.github.io/planning-atlas-energie/logo.png?v=3) center/84% no-repeat!important;width:48px!important;height:48px!important;border-radius:12px!important;flex:none;box-shadow:0 1px 4px rgba(0,0,0,.2)}
 .brand h1,#atlas-setup h2{font-stretch:100%!important;letter-spacing:0!important;text-transform:none!important;font-weight:800!important;color:var(--ink)}
 .btn{border-radius:10px}
 .btn.primary{background:#f6b52c;border-color:#f6b52c;color:#12241a}
@@ -280,7 +280,10 @@ body{background:var(--paper)}
 .brand h1{color:#fff!important}.brand p{color:rgba(255,255,255,.85)!important}
 .brand{gap:12px!important}
 #atlas-setup .brand{flex-direction:column;text-align:center;gap:10px!important;margin:4px 0 6px}
-#atlas-setup .brand .mark{width:96px!important;height:96px!important;border-radius:20px!important;box-shadow:0 2px 10px rgba(18,36,26,.15)}
+#atlas-setup .brand .mark{background:url(https://atlas-energie.github.io/planning-atlas-energie/logo-complet.png?v=3) center/contain no-repeat!important;width:250px!important;max-width:100%;height:82px!important;border-radius:0!important;box-shadow:none!important}
+#atlas-setup .brand p{display:none}
+.top .brand p{display:none}
+@media (min-width:761px){.top .mark{background-image:url(https://atlas-energie.github.io/planning-atlas-energie/logo-complet.png?v=3)!important;background-size:88% auto!important;width:158px!important;height:50px!important}.brand h1{font-size:21px!important}}
 #atlas-setup .brand h2{margin:0}
 #who{display:none!important}
 .tabs{background:#fff!important;border-bottom:1px solid var(--line)!important;padding:0 12px!important;gap:2px!important;box-shadow:0 1px 3px rgba(18,36,26,.05)}
